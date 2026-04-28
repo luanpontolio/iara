@@ -126,3 +126,36 @@
 - [Assumption about scope boundaries, e.g., "Mobile support is out of scope for v1"]
 - [Assumption about data/environment, e.g., "Existing authentication system will be reused"]
 - [Dependency on existing system/service, e.g., "Requires access to the existing user profile API"]
+
+## Constitutional Considerations
+
+<!--
+  These principles from the OpenBox Constitution apply to ALL features.
+  Document any specific impacts, constraints, or justified exceptions for this feature.
+-->
+
+**Code Quality Requirements**:
+- Feature complexity suitable for <400 line PRs (Principle III - Code Review Excellence)
+- Component/module design follows readability standards (Principle I - Code Readability)
+- Type safety: all interfaces defined before implementation (Principle II - Type Safety)
+
+**Testing Requirements**:
+- Target 80%+ test coverage (Principle IV - Test Coverage)
+- Critical user flows need E2E tests (Principle V - Test-First Mindset)
+- List key test scenarios derived from acceptance criteria above
+
+**User Experience Requirements**:
+- Must use design system components (Principle VI - UX Consistency)
+- All user actions need feedback: loading, success, error states (Principle VII - User Feedback)
+- Consistent terminology with existing features (Principle VI - UX Consistency)
+
+**Performance Requirements**:
+- Frontend loading performance targets: <3s initial, <5s TTI (Principle VIII - Performance Standards)
+- Backend API response targets: <200ms p95 (Principle VIII - Performance Standards)
+- Smart contract gas optimization if blockchain interactions (Principle VIII - Performance Standards)
+
+**Workflow Compliance**:
+- This spec must be approved before planning (Principle IX - Specification-First Workflow)
+- Implementation will follow task list from `/speckit-tasks` (Principle X - Task-Driven Execution)
+
+[Document any feature-specific exceptions or additional constraints]

@@ -31,7 +31,29 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+Verify compliance with [OpenBox Constitution](../.specify/memory/constitution.md):
+
+**Code Quality**:
+- [ ] **I. Code Readability**: Design uses descriptive names, functions <50 lines, files <300 lines
+- [ ] **II. Type Safety**: TypeScript strict mode planned, no `any` types, interfaces defined first
+- [ ] **III. Code Review**: Feature can be split into PRs <400 lines each
+
+**Testing Standards**:
+- [ ] **IV. Test Coverage**: Testing strategy achieves 80%+ coverage (unit/integration/contract/E2E)
+- [ ] **V. Test-First Mindset**: Tests planned for each user story, test scenarios from acceptance criteria
+
+**User Experience**:
+- [ ] **VI. UX Consistency**: Uses design system components, follows established patterns
+- [ ] **VII. User Feedback**: Loading states, error messages, success confirmations planned for all user actions
+
+**Performance**:
+- [ ] **VIII. Performance Standards**: Frontend <3s load, backend <200ms p95 API responses, gas-optimized contracts
+
+**Workflow**:
+- [ ] **IX. Specification-First**: This plan is based on approved `spec.md` with prioritized user stories
+- [ ] **X. Task-Driven Execution**: `/speckit-tasks` will generate dependency-ordered tasks from this plan
+
+**Violations**: If any principle requires violation, document in Complexity Tracking section with justification
 
 ## Project Structure
 
