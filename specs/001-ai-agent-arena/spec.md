@@ -6,6 +6,16 @@
 **Status**: Draft  
 **Input**: User description: "Foro — A smart contract that verifies whether an AI agent delivers what it declares it delivers. Creators publish Agent Contracts on ERC-8004 with exact test cases and evaluation criteria. Keepers execute tests, evaluate outputs with LLM running in TEE on 0G Compute, and submit results on-chain. The chatId signed by the enclave is the proof. The more independent Keepers reach the same result, the stronger the agent's reputation."
 
+## Clarifications
+
+### Session 2026-04-29
+
+- Q: How does the Keeper interact with 0G Compute for TEE proof validation? → A: Keepers use provider-specific SDKs (0G Compute SDK for MVP) which abstract the API and return standardized proof objects; Foro contract only validates proof format not provider implementation
+- Q: What is the exact timeout period for a Keeper to reveal test inputs after committing? → A: Configurable per test request (e.g., 20 minutes to 1 hour) to handle TEE provider delays
+- Q: How is the agent creator wallet (receives 20% of test fees) determined and stored? → A: Creator wallet address stored at registration time (immutable, from msg.sender or explicit parameter)
+- Q: What happens when an agent endpoint fails mid-execution (e.g., Keeper completes 2 of 3 test cases before endpoint becomes unreachable)? → A: Full refund to user (test fee returned), Keeper gets stake back, Keeper submits test failed result, creator can respond to retry or accept score impact
+- Q: What observability mechanisms should the Foro contracts provide for monitoring test lifecycle and agent reputation? → A: Events for all state transitions + view functions for current state (hybrid approach for real-time monitoring and on-demand queries)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Agent Registration with Immutable Contract (Priority: P1)
@@ -102,13 +112,13 @@ Users who want to use a VERIFIED or ELITE agent can call the agent's endpoint di
 ### Edge Cases
 
 - What happens when the agent's endpoint is offline or doesn't respond during test execution?
-  - Keeper captures timeout/error, submits result with score = 0 and error details, user receives automatic refund from escrow, agent status remains PENDING or degrades based on failure count.
+  - Keeper captures timeout/error, submits test failed result (status: FAILED_ENDPOINT) with error details and any partial completion data. User receives automatic full refund from escrow, Keeper receives stake back (no penalty for agent failure). Creator is notified and can respond to retry test (if transient issue) or accept the failure (which degrades agent reputation based on failure count). Agent status remains PENDING or degrades based on failure count.
 
 - How does the system prevent spam registration of invalid agents?
   - Test cost is paid by users (not creators), acting as a natural filter. However, repeated FAILED tests for the same agent damage its reputation permanently on-chain, disincentivizing spam. Additionally, registration could require a small stake in future versions.
 
 - What happens if the Keeper or 0G Compute is temporarily unavailable?
-  - If Keeper commits hash + stake but fails to reveal within a timeout window (e.g., 24 hours), the contract allows automatic refund to user and stake slashing. If 0G Compute is down, Keeper cannot obtain TEE proof, so teeVerified = false and score = 0.
+  - If Keeper commits hash + stake but fails to reveal within the configurable timeout window (e.g., 20 minutes to 1 hour depending on test complexity), the contract allows automatic refund to user and stake slashing. If 0G Compute is down, Keeper cannot obtain TEE proof, so teeVerified = false and score = 0.
 
 - How to ensure the same agent isn't tested simultaneously by multiple users?
   - The contract doesn't prevent concurrent test requests. Multiple Keepers can work on different test requests for the same agent in parallel. Each TestRequested event creates a unique arenaId, so results are independent.
@@ -117,7 +127,7 @@ Users who want to use a VERIFIED or ELITE agent can call the agent's endpoint di
   - The contractHash stored on-chain at registration is immutable. Any change to the Agent Contract metadata (including endpoint URL) would produce a different hash. Users and Keepers can detect this mismatch, and all previous test results become invalid for the new contract.
 
 - What happens when a Keeper commits but never reveals (griefing attack)?
-  - After a reveal timeout period (e.g., 24 hours), the contract allows anyone to call `forfeitStake(foroId)`, which slashes the Keeper's stake (100% to protocol or user refund) and refunds the test fee to the user. This prevents Keepers from locking jobs.
+  - After the configurable reveal timeout period (set per test request, e.g., 20 minutes to 1 hour based on expected test complexity), the contract allows anyone to call `forfeitStake(foroId)`, which slashes the Keeper's stake (100% to protocol or user refund) and refunds the test fee to the user. This prevents Keepers from locking jobs.
 
 - What happens if two Keepers claim the same test job?
   - Multiple Keepers can execute the same test to build consensus. Each Keeper commits independently with their own stake, executes the test cases, and submits results. The weighted average of all finalized results contributes to the agent's cumulative score, with weight proportional to each Keeper's reputation. This creates stronger signal — the more independent Keepers reach similar scores, the more reliable the agent's reputation. Each gets their own unique foroId when committing to the same test request.
@@ -141,14 +151,14 @@ Users who want to use a VERIFIED or ELITE agent can call the agent's endpoint di
 - **FR-002**: Creators MUST publish Agent Contract as metadata on their ERC-8004 token via `setMetadata(agentId, "foro:contract", bytes(JSON))` before registration
 - **FR-003**: Agent Contract JSON MUST include: category (string), version (string), input schema (JSONSchema), output schema (JSONSchema), sla (maxLatencyMs, maxCostUSD), testCases array (min 1, recommended 3+)
 - **FR-004**: Each test case in Agent Contract MUST include: id (unique per contract), description (human-readable), input (matches input schema), evaluation.criteria (array of strings describing expected properties)
-- **FR-005**: Creators MUST call `registerAgent(erc8004Address, agentId)` to register on Foro after publishing Agent Contract metadata
+- **FR-005**: Creators MUST call `registerAgent(erc8004Address, agentId, creatorWallet)` to register on Foro after publishing Agent Contract metadata, specifying the immutable wallet address that will receive 20% of test fees
 - **FR-006**: Foro contract MUST compute `contractHash = keccak256(agentContractJSON)` and store it immutably on-chain at registration time
 - **FR-007**: Registration MUST revert if: ERC-8004 contract invalid, agentId already registered, or Agent Contract metadata not found or unparseable
 - **FR-008**: Newly registered agents MUST have initial status PENDING (zero tests completed)
 
 #### Test Request & Escrow
 
-- **FR-009**: Users MUST call `requestTest{value: testFeeAmount}` with exact fee amount (defined per category, e.g., 0.001 ETH for url-summarizer)
+- **FR-009**: Users MUST call `requestTest{value: testFeeAmount}` with exact fee amount (defined per category, e.g., 0.001 ETH for url-summarizer) and MAY specify revealTimeoutSeconds (defaults to 1 hour if not provided)
 - **FR-010**: Test fee MUST be held in escrow by AgentVault contract until test is finalized or refunded
 - **FR-011**: `requestTest` MUST emit `TestRequested` event with: foroId (unique), agentId, requester address, fee amount, timestamp
 - **FR-012**: Users MAY request tests for agents in any status (PENDING, PROBATION, VERIFIED, ELITE, FAILED) to accumulate more reputation data
@@ -164,7 +174,7 @@ Users who want to use a VERIFIED or ELITE agent can call the agent's endpoint di
 - **FR-016**: Keepers MUST retrieve Agent Contract via ERC-8004 `getMetadata(agentId, "foro:contract")` after committing
 - **FR-017**: Keepers MUST execute each test case by calling the agent's endpoint with the specified input and measuring latency per round
 - **FR-018**: Keepers MUST construct evaluation prompts containing: agent output, test case description, and evaluation criteria from Agent Contract
-- **FR-019**: Keepers MUST call 0G Compute SDK to evaluate quality via LLM running in TEE, obtaining chatId (signed by enclave) as proof
+- **FR-019**: Keepers MUST call 0G Compute SDK (provider-specific SDK abstracting API implementation) to evaluate quality via LLM running in TEE, obtaining standardized proof object with chatId (signed by enclave)
 - **FR-020**: Keepers MUST call `processResponse(providerAddress, chatId)` on 0G Compute to verify TEE proof, receiving teeVerified (bool) and response data
 - **FR-021**: Quality score MUST be computed as average of LLM-evaluated criteria scores (each 0-100)
 - **FR-022**: Latency score MUST be computed as: 100 points if latency <= 500ms, 0 points if latency >= 3000ms, linear interpolation between
@@ -173,10 +183,12 @@ Users who want to use a VERIFIED or ELITE agent can call the agent's endpoint di
 
 #### Reveal & Result Submission
 
-- **FR-025**: Keepers MUST call `revealTestInputs(foroId, testCases, salt)` before submitting result
-- **FR-026**: Reveal MUST revert if: `keccak256(testCases + salt)` does not match committed hash, or revealed testCases do not derive to the registered contractHash
-- **FR-027**: Keepers MUST call `submitResult(foroId, score, latency, chatId, teeProof)` to submit result in pending state
+- **FR-025**: Keepers MUST call `revealTestInputs(foroId, testCases, salt)` before submitting result, within the configurable reveal timeout window specified in the test request
+- **FR-026**: Reveal MUST revert if: `keccak256(testCases + salt)` does not match committed hash, or revealed testCases do not derive to the registered contractHash, or reveal timeout window has expired
+- **FR-026b**: After reveal timeout expires without successful reveal, anyone MAY call `forfeitStake(foroId)` to slash the Keeper's full stake (100% to protocol or user refund) and refund test fee to user
+- **FR-027**: Keepers MUST call `submitResult(foroId, score, latency, chatId, teeProof)` to submit result in pending state, OR call `submitTestFailed(foroId, failureReason, partialData)` if agent endpoint fails during execution
 - **FR-028**: Result submission MUST include: score (0-100), average latency (ms), chatId from 0G Compute, TEE proof bytes
+- **FR-028b**: Test failure submission MUST include: failureReason (TIMEOUT | UNREACHABLE | INVALID_RESPONSE | ENDPOINT_ERROR), error details, partial completion data (if any test cases succeeded before failure)
 - **FR-029**: Submitted results MUST enter 1-hour contestation window before finalization
 
 #### Contestation & Dispute Resolution
@@ -191,8 +203,9 @@ Users who want to use a VERIFIED or ELITE agent can call the agent's endpoint di
 #### Finalization & Fee Distribution
 
 - **FR-036**: `finalizeResult` MUST revert if: contestation window not expired, result already finalized, or active contestation not resolved
+- **FR-036b**: When test failed result is submitted, `finalizeTestFailure(foroId)` MUST immediately refund full test fee to user, return full stake to Keeper, and allow creator to call `retryTest(foroId)` (creator pays new fee) or accept failure impact on reputation
 - **FR-037**: Finalization MUST return full stake to Keeper (if no contestation or contestation lost)
-- **FR-038**: Finalization MUST distribute test fee as: 70% to Keeper, 20% to agent creator wallet, 10% to protocol treasury
+- **FR-038**: Finalization MUST distribute test fee as: 70% to Keeper, 20% to agent creator wallet (immutable address stored at registration), 10% to protocol treasury
 - **FR-039**: Finalization MUST update agent's cumulative score with weighted average incorporating the new test result
 - **FR-040**: Finalization MUST increment agent's test count
 
@@ -205,7 +218,24 @@ Users who want to use a VERIFIED or ELITE agent can call the agent's endpoint di
   - ELITE: 10+ tests AND score >= 80
   - FAILED: 3+ tests AND score < 40
 - **FR-042**: Cumulative score MUST be weighted average of all finalized test scores, weighted by each Keeper's reputation (equal weights in MVP)
-- **FR-043**: Anyone MUST be able to query agent status, cumulative score, test count, and full test history on-chain
+- **FR-043**: Anyone MUST be able to query agent status, cumulative score, test count, and full test history on-chain via view functions: `getAgent(agentId)`, `getAgentStatus(agentId)`, `getTestHistory(agentId, offset, limit)`
+- **FR-043b**: Contracts MUST emit events for all critical state transitions to enable real-time monitoring and off-chain indexing:
+  - `AgentRegistered(agentId, erc8004Address, contractHash, creatorWallet, timestamp)`
+  - `TestRequested(foroId, agentId, requester, testFee, revealTimeoutSeconds, timestamp)`
+  - `TestCommitted(foroId, keeperAddress, commitHash, stake, timestamp)`
+  - `TestRevealed(foroId, contractHash, timestamp)`
+  - `ResultSubmitted(foroId, score, avgLatencyMs, chatId, teeVerified, timestamp)`
+  - `TestFailed(foroId, failureReason, partialData, timestamp)`
+  - `ResultContested(foroId, contestant, contestStake, timestamp)`
+  - `ContestationResolved(foroId, contestantWins, timestamp)`
+  - `ResultFinalized(foroId, finalScore, newAgentStatus, timestamp)`
+  - `StakeForfeited(foroId, keeperAddress, slashedAmount, timestamp)`
+- **FR-043c**: Contracts MUST provide view functions for querying current state without event log processing:
+  - `getTestJob(foroId)` → returns full TestJob struct
+  - `getTestResult(foroId)` → returns TestResult struct if submitted
+  - `getAgent(agentId)` → returns Agent struct with current status, score, test count
+  - `getContestations(foroId)` → returns array of Contestation structs
+  - `getTestHistory(agentId, offset, limit)` → returns paginated array of foroIds for the agent
 
 #### Agent Usage via x402
 
@@ -218,7 +248,7 @@ Users who want to use a VERIFIED or ELITE agent can call the agent's endpoint di
 ### Key Entities
 
 - **Agent**: Represents an AI agent registered in the Foro protocol
-  - Attributes: agentId (unique within ERC-8004 contract), erc8004Address (contract address), contractHash (keccak256 of Agent Contract JSON, immutable), creatorWallet (receives 20% of test fees), status (PENDING | PROBATION | VERIFIED | ELITE | FAILED), testCount (number of finalized tests), cumulativeScore (weighted average 0-100), registrationTimestamp
+  - Attributes: agentId (unique within ERC-8004 contract), erc8004Address (contract address), contractHash (keccak256 of Agent Contract JSON, immutable), creatorWallet (immutable address set at registration, receives 20% of test fees), status (PENDING | PROBATION | VERIFIED | ELITE | FAILED), testCount (number of finalized tests), cumulativeScore (weighted average 0-100), registrationTimestamp
   - Relationships: has one immutable Agent Contract (stored as ERC-8004 metadata), has zero or more TestResults, has zero or more Contestations
 
 - **AgentContract**: Represents the immutable test specification published by creator (stored as ERC-8004 metadata, not as separate on-chain entity)
@@ -227,11 +257,11 @@ Users who want to use a VERIFIED or ELITE agent can call the agent's endpoint di
   - Relationships: belongs to exactly one Agent (referenced by agentId in metadata key "foro:contract")
 
 - **TestJob**: Represents a test request and its lifecycle from request to finalization
-  - Attributes: foroId (unique job ID), agentId, requester (user who paid), testFee (amount in escrow), keeperAddress (who claimed job), keeperStake (2x testFee), commitHash (keccak256 of testCases + salt), commitTimestamp, revealTimestamp, status (requested | committed | revealed | submitted | contested | finalized | refunded)
+  - Attributes: foroId (unique job ID), agentId, requester (user who paid), testFee (amount in escrow), revealTimeoutSeconds (configurable, defaults to 3600), keeperAddress (who claimed job), keeperStake (2x testFee), commitHash (keccak256 of testCases + salt), commitTimestamp, revealTimestamp, status (requested | committed | revealed | submitted | contested | finalized | refunded | forfeited)
   - Relationships: belongs to one Agent, has zero or one TestResult (after submission), has zero or more Contestations
 
 - **TestResult**: Represents submitted test outcome from a Keeper (before or after finalization)
-  - Attributes: foroId (links to TestJob), score (0-100, composite of latency + quality), avgLatencyMs (measured during test execution), chatId (from 0G Compute, proof of TEE evaluation), teeProof (bytes of cryptographic proof), teeVerified (bool), submissionTimestamp, finalized (bool)
+  - Attributes: foroId (links to TestJob), resultType (SUCCESS | FAILED_ENDPOINT), score (0-100, composite of latency + quality, or null if failed), avgLatencyMs (measured during test execution, or null if failed), chatId (from 0G Compute, proof of TEE evaluation, or null if failed), teeProof (bytes of cryptographic proof, or null if failed), teeVerified (bool), failureReason (if resultType = FAILED_ENDPOINT), partialData (any test cases completed before failure), submissionTimestamp, finalized (bool)
   - Relationships: belongs to one TestJob, belongs to one Agent (via foroId → agentId), may have zero or more Contestations
 
 - **Contestation**: Represents a dispute filed against a submitted result
@@ -271,7 +301,7 @@ Users who want to use a VERIFIED or ELITE agent can call the agent's endpoint di
 - **MVP Scope**: Single category (url-summarizer) with fixed test case structure and evaluation criteria; multiple categories and dynamic category creation will be added post-MVP via governance
 - **Keeper Operation**: Keepers run off-chain services (bots) that monitor TestRequested events, execute tests, and interact with 0G Compute SDK; Foro provides economic incentives (fee share) and security (staking) but does not provide Keeper software in MVP
 - **Keeper Decentralization**: Multiple independent Keepers can participate, but reputation weighting in score calculation is equal in MVP (sophisticated reputation systems for Keepers are post-MVP)
-- **0G Compute Integration**: 0G Compute is available and functional with TEE (Trusted Execution Environment) support; LLM evaluation model is pre-deployed and accessible via 0G Compute SDK; chatId + enclave signature is the standard proof format
+- **0G Compute Integration**: 0G Compute is available and functional with TEE (Trusted Execution Environment) support; Keepers use 0G Compute SDK which abstracts API implementation and returns standardized proof objects; LLM evaluation model is pre-deployed and accessible via the SDK; chatId + enclave signature is the standard proof format; Foro contract validates proof format only, not provider-specific implementation details
 - **TEE Proof Format**: 0G Compute returns chatId signed by enclave as proof; Foro contract trusts 0G Compute's signature verification without implementing full enclave attestation verification on-chain in MVP (off-chain verification by auditors is sufficient)
 - **x402 Payment**: x402 facilitators (Base USDC or Tempo USDC.e) are operational; agents integrate x402 at their endpoints independently; Foro does not provide x402 proxy or facilitator services in MVP
 - **Blockchain**: Foro contracts are deployed on 0G Chain (EVM-compatible); native token is ETH (or 0G native token); test fees are paid in native token for simplicity in MVP (ERC-20 fee tokens post-MVP)
@@ -373,8 +403,9 @@ Users who want to use a VERIFIED or ELITE agent can call the agent's endpoint di
 - **Security Critical - Fee Distribution**: 70/20/10 split MUST be exact with no rounding errors accumulating escrow balance; all escrowed funds MUST be distributed or refunded (zero balance after finalization/refund)
 - **Security Critical - Commit-Reveal**: Reveal MUST verify hash matches commit AND testCases derive to registered contractHash; accepting mismatched reveal enables griefing attacks
 - **Immutability**: TestResult data (score, latency, chatId, teeProof) stored on-chain is permanent; no admin functions to modify or delete results after finalization (immutability is a trust requirement)
-- **External Dependency - 0G Compute**: Keeper service MUST handle 0G Compute unavailability gracefully (retry logic, exponential backoff, timeout); if TEE proof unavailable, Keeper MUST NOT submit result (or submit with teeVerified=false and score=0)
+- **External Dependency - 0G Compute**: Keeper service MUST use 0G Compute SDK (provider-specific) which returns standardized proof objects; Keeper service MUST handle SDK unavailability gracefully (retry logic, exponential backoff, timeout); if TEE proof unavailable, Keeper MUST NOT submit result (or submit with teeVerified=false and score=0); Foro contract validates proof format only, allowing future support for other TEE providers with compatible proof structures
 - **External Dependency - ERC-8004**: Metadata retrieval failure (agent contract not found, JSON unparseable) MUST revert registration or test execution with clear error; no silent failures
 - **Gas Optimization**: Use `calldata` instead of `memory` for large structs (Agent Contract JSON, test cases) to reduce gas costs on read-only functions
 - **Auditability**: All cryptographic operations (hash computation, signature verification) MUST be documented with references to standards (keccak256 per EVM spec, ECDSA per EIP-191/712 if applicable)
+- **Observability**: Contracts MUST emit events for all state transitions (AgentRegistered, TestRequested, TestCommitted, TestRevealed, ResultSubmitted, TestFailed, ResultContested, ContestationResolved, ResultFinalized, StakeForfeited) AND provide comprehensive view functions for current state queries to support both real-time monitoring by Keepers/UIs and on-demand data access without event indexing
 - **Upgradeability**: Smart contracts MAY use proxy pattern (UUPS or Transparent) for upgradeability in MVP, but upgrade authority MUST be explicitly documented and secured (multi-sig or timelock in production)
