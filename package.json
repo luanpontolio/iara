@@ -1,0 +1,28 @@
+{
+  "name": "foro-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Foro - Agent Verification Protocol",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "format": "pnpm -r format",
+    "clean": "pnpm -r clean",
+    "contracts:build": "pnpm --filter @foro/contracts build",
+    "contracts:test": "pnpm --filter @foro/contracts test",
+    "backend:dev": "pnpm --filter @foro/backend dev",
+    "frontend:dev": "pnpm --filter @foro/frontend dev",
+    "dev": "concurrently \"pnpm backend:dev\" \"pnpm frontend:dev\""
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "concurrently": "^8.2.2",
+    "typescript": "^5.3.3"
+  }
+}
