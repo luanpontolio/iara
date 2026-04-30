@@ -7,8 +7,8 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "dev": "tsx watch src/keeper/index.ts",
-    "start": "node dist/keeper/index.js",
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -17,12 +17,12 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@0gfoundation/0g-ts-sdk": "^0.2.1",
     "@foro/types": "workspace:*",
     "dotenv": "^16.4.5",
     "ethers": "^6.11.0",
     "pino": "^8.19.0",
-    "pino-pretty": "^10.3.1"
+    "pino-pretty": "^10.3.1",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
