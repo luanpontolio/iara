@@ -7,7 +7,7 @@
 
 ## Summary
 
-Foro is a smart contract system that verifies AI agent capabilities through economic staking, TEE-based evaluation, and on-chain reputation. Creators publish immutable Agent Contracts on ERC-8004 with test cases and evaluation criteria. Keepers execute tests by staking 2x the test fee, evaluating outputs via LLM running in 0G Compute TEE, and submitting cryptographically-proven results on-chain. Multiple Keepers can test the same agent to build consensus. Agent reputation (PENDING → PROBATION → VERIFIED → ELITE → FAILED) is determined by cumulative scores weighted by Keeper reputation. The system includes contestation mechanisms, fee distribution (70% Keeper, 20% agent creator, 10% protocol), and integration with x402 payment protocol for monetizing verified agents.
+Foro is a smart contract system that verifies AI agent capabilities through economic staking, TEE-based evaluation, and on-chain reputation. Creators publish immutable Agent Contracts on ERC-8004 with test cases and evaluation criteria. Keepers execute tests by staking 2x the test fee, evaluating outputs via LLM running in 0G Compute TEE, and submitting cryptographically-proven results on-chain. Multiple Keepers can test the same agent to build consensus. Agent reputation (PENDING → PROBATION → VERIFIED → ELITE → FAILED) is determined by cumulative scores weighted by Keeper reputation. The system includes contestation mechanisms, fee distribution (70% Keeper, 20% agent creator, 10% protocol), and integration with x402 payment protocol for monetizing agents (any status can monetize, verification status helps users assess quality).
 
 ## Technical Context
 
