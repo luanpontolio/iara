@@ -51,10 +51,8 @@ pnpm dev
 
 1. Implement core contracts in `packages/contracts/src/`:
    - `MockERC8004.sol` - Test ERC-8004 implementation
-   - `ForoRegistry.sol` - Core agent registration and test orchestration
-   - `KeeperRegistry.sol` - Keeper staking and reputation
-   - `AgentVault.sol` - Fee escrow and distribution (ERC-4626 based)
-   - `BugBounty.sol` - Bug bounty management
+   - `ForoRegistry.sol` - Core agent registration, test orchestration, and Keeper management
+   - `AgentVault.sol` - Fee escrow and distribution (simple Ownable pattern)
 
 2. Write Foundry tests in `packages/contracts/test/`:
    - Unit tests for each contract (commit-reveal, staking, scoring)
@@ -142,8 +140,6 @@ pnpm dev
    - CTAs:
      - `[REQUEST TEST · 0.001 ETH]` for PENDING/PROBATION
      - `[USE VIA x402]` for VERIFIED/ELITE
-     - `[OPEN BUG BOUNTY]` if msg.sender == owner
-     - `[VIEW BOUNTY]` if bounty active
 
 2. **`/register` - 3-Step Registration Wizard**
    - **Step 1**: Mint ERC-8004 (agentURI input)
@@ -152,15 +148,7 @@ pnpm dev
      - Set `"foro:endpoint"` metadata
    - **Step 3**: Call `registerAgent()` → confirmation with foroId
 
-3. **`/bounty/[foroId]` - Bug Bounty Interface**
-   - For creator:
-     - Form: budget + criteria textarea + timelock (3 or 7 days)
-     - List findings with approve/reject buttons
-   - For Keeper:
-     - Display bounty criteria
-     - Form: submit finding (evidenceURI + hash)
-
-4. **`/api/use/[foroId]` - x402 Proxy (API Route)**
+3. **`/api/use/[foroId]` - x402 Proxy (API Route)**
    ```typescript
    export async function POST(req: Request) {
      const paymentHeader = req.headers.get('x-payment-authorization');
@@ -245,13 +233,7 @@ pnpm dev
         
 03:30  Use via x402 (POST /api/use/[foroId])
         
-03:45  Open Bug Bounty (0.05 ETH, 3 days)
-        
-04:00  Keeper submits finding (evidence: agent hallucinates)
-        
-04:20  Creator approves → budget released
-        
-04:40  agent-bad → FAILED → refund to user
+03:45  agent-bad → FAILED → refund to user
         
 05:00  /[foroId] shows:
         - Agent Contract
@@ -259,7 +241,7 @@ pnpm dev
         - chatIds verified on-chain
 ```
 
-**Deliverable**: x402 functional, 2 demo agents deployed, bug bounty executed live, chatId verifiable on 0G Chain explorer, README with 5-command setup.
+**Deliverable**: x402 functional, 2 demo agents deployed, chatId verifiable on 0G Chain explorer, README with 5-command setup.
 
 ---
 
@@ -281,7 +263,6 @@ pnpm dev
 - [x] Happy path: register → test → VERIFIED
 - [x] Contestation: submit → contest → resolve(contestantWins) → slashing
 - [x] Timeout: commit without reveal → forfeitStake → refund
-- [x] Bug bounty: open → submit finding → approve → payment
 
 **Security Tests**:
 - [x] Reentrancy protection (fee distribution, refund)
@@ -298,8 +279,7 @@ pnpm dev
 - Decentralized contestation resolution
 - Meta-agent that proposes categories
 - Mobile responsive (desktop-first)
-- Multiple bounty winners
-- Arbitration of rejected findings
+- Bug Bounty system (post-MVP feature)
 
 ---
 

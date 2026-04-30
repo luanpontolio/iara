@@ -294,85 +294,6 @@ function getKeeperWeight(address keeper) public view returns (uint256) {
 
 ---
 
-### BugBounty (On-Chain Entity)
-
-**Storage**: BugBounty contract
-
-**Attributes**:
-- `bountyId` (uint256, unique): Auto-incremented ID
-- `foroId` (uint256): Foreign key to Agent being tested
-- `creator` (address): Agent creator who opened bounty (must be agent owner)
-- `budget` (uint256): Bounty amount in ETH
-- `criteriaURI` (string): IPFS or HTTP URL to bounty criteria document
-- `criteriaHash` (bytes32): keccak256 of criteria for integrity
-- `timelockDays` (uint256): Deadline window (3 or 7 days)
-- `deadline` (uint256): Block timestamp when bounty expires
-- `status` (enum): OPEN | RESOLVED | EXPIRED
-- `winner` (address): Keeper who won bounty (zero address if none)
-- `openedTimestamp` (uint256): Block timestamp of bounty opening
-
-**Relationships**:
-- Belongs to one Agent (via foroId)
-- Has zero or more Findings
-
-**State Transitions**:
-```
-OPEN (creator calls openBounty with budget)
-  ↓ [Keeper submits finding, creator approves]
-RESOLVED (budget released to Keeper)
-
-OPEN
-  ↓ [deadline expires, no approved finding]
-EXPIRED (budget returned to creator)
-```
-
-**Validation Rules**:
-- `creator` must equal Agent.creatorWallet (via ERC-8004 ownerOf)
-- `budget` must be >= 0.01 ETH
-- `timelockDays` must be 3 or 7
-- `deadline` = openedTimestamp + (timelockDays * 1 days)
-- Cannot open bounty if active bounty already exists for same foroId
-
----
-
-### Finding (On-Chain Entity)
-
-**Storage**: BugBounty contract
-
-**Attributes**:
-- `findingId` (uint256, unique): Auto-incremented ID
-- `bountyId` (uint256): Foreign key to BugBounty
-- `keeper` (address): Keeper who submitted finding
-- `evidenceURI` (string): IPFS or HTTP URL to finding evidence
-- `evidenceHash` (bytes32): keccak256 of evidence for integrity
-- `submissionTimestamp` (uint256): Block timestamp of submission
-- `approved` (bool): Whether creator approved this finding
-- `rejected` (bool): Whether creator rejected this finding
-- `rejectionReason` (string): Creator's reason for rejection
-
-**Relationships**:
-- Belongs to one BugBounty (via bountyId)
-- Submitted by one Keeper
-
-**State Transitions**:
-```
-SUBMITTED (Keeper calls submitFinding)
-  ↓ [Creator calls approveFinding]
-APPROVED (budget released, bounty RESOLVED)
-
-SUBMITTED
-  ↓ [Creator calls rejectFinding]
-REJECTED (Keeper can submit new finding)
-```
-
-**Validation Rules**:
-- `submissionTimestamp` must be < BugBounty.deadline
-- Cannot submit finding for RESOLVED or EXPIRED bounties
-- Same Keeper can submit multiple findings (re-submit after rejection)
-- Only one finding can be approved per bounty
-
----
-
 ## Relationships Diagram
 
 ```
@@ -390,14 +311,6 @@ Contestation ─────┘
 Keeper
     ↓ (registers as)
 ERC-8004 (category: "foro-keeper")
-
-Agent
-    ↓ (has many)
-BugBounty
-    ↓ (has many)
-Finding
-    ↑ (submits)
-Keeper
 ```
 
 ---
@@ -425,8 +338,6 @@ event TestInputsRevealed(uint256 indexed foroId, string testCasesJSON, bytes32 s
 event ResultSubmitted(uint256 indexed foroId, uint256 score, uint256 avgLatencyMs, bytes32 chatId, bool teeVerified);
 event ResultContested(uint256 indexed foroId, address indexed contestant, uint256 contestStake, string evidenceURI);
 event ResultFinalized(uint256 indexed foroId, uint256 agentId, uint256 newScore, AgentStatus newStatus);
-event BountyOpened(uint256 indexed bountyId, uint256 indexed foroId, address creator, uint256 budget, uint256 deadline);
-event FindingSubmitted(uint256 indexed findingId, uint256 indexed bountyId, address keeper, string evidenceURI);
 ```
 
 ---

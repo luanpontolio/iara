@@ -31,24 +31,6 @@ interface IAgentVault {
         uint256 amount
     );
     
-    event BountyDeposited(
-        uint256 indexed bountyId,
-        address indexed creator,
-        uint256 amount
-    );
-    
-    event BountyReleased(
-        uint256 indexed bountyId,
-        address indexed recipient,
-        uint256 amount
-    );
-    
-    event BountyReturned(
-        uint256 indexed bountyId,
-        address indexed creator,
-        uint256 amount
-    );
-    
     // ============ Core Functions ============
     
     /**
@@ -84,35 +66,6 @@ interface IAgentVault {
         address requester
     ) external;
     
-    /**
-     * @notice Deposit bug bounty budget
-     * @param bountyId Bounty ID
-     * @dev Called by BugBounty contract on openBounty
-     */
-    function depositBounty(uint256 bountyId) external payable;
-    
-    /**
-     * @notice Release bounty to winner
-     * @param bountyId Bounty ID
-     * @param recipient Keeper who won bounty
-     * @dev Called by BugBounty contract on approveFinding
-     */
-    function releaseBounty(
-        uint256 bountyId,
-        address recipient
-    ) external;
-    
-    /**
-     * @notice Return bounty to creator after expiry
-     * @param bountyId Bounty ID
-     * @param creator Agent creator who opened bounty
-     * @dev Called by BugBounty contract on claimExpired
-     */
-    function returnBounty(
-        uint256 bountyId,
-        address creator
-    ) external;
-    
     // ============ View Functions ============
     
     /**
@@ -121,13 +74,6 @@ interface IAgentVault {
      * @return amount Amount in escrow
      */
     function escrowed(uint256 foroId) external view returns (uint256 amount);
-    
-    /**
-     * @notice Get escrowed bounty amount
-     * @param bountyId Bounty ID
-     * @return amount Amount in escrow
-     */
-    function bountyEscrowed(uint256 bountyId) external view returns (uint256 amount);
     
     /**
      * @notice Get protocol treasury address
