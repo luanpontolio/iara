@@ -22,7 +22,7 @@ const configSchema = z.object({
   stakeMultiplier: z.number().default(2),
   
   // Monitoring
-  pollIntervalMs: z.number().default(5000),
+  pollIntervalMs: z.number().default(10000),
   blockConfirmations: z.number().default(1),
   
   // Execution
@@ -47,7 +47,7 @@ export function loadConfig(): Config {
     minTestFee: process.env.MIN_TEST_FEE || '0.001',
     stakeMultiplier: parseInt(process.env.STAKE_MULTIPLIER || '2', 10),
     
-    pollIntervalMs: parseInt(process.env.POLL_INTERVAL_MS || '5000', 10),
+    pollIntervalMs: parseInt(process.env.POLL_INTERVAL_MS || '10000', 10),
     blockConfirmations: parseInt(process.env.BLOCK_CONFIRMATIONS || '1', 10),
     
     agentTimeoutMs: parseInt(process.env.AGENT_TIMEOUT_MS || '10000', 10),

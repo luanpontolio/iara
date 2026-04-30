@@ -2,7 +2,7 @@
  * Keeper Service - Main Orchestrator
  * 
  * Monitors blockchain for test requests and executes the full workflow:
- * 1. Listen to TestRequested events
+ * 1. Poll for available test jobs
  * 2. Claim job with commit hash and stake
  * 3. Execute test cases against agent endpoint
  * 4. Judge outputs via 0G Compute TEE
@@ -28,6 +28,7 @@ export class KeeperService {
   private contracts: Contracts;
   private zgBroker: ZGComputeBroker;
   private isRunning: boolean = false;
+  private processedJobs: Set<string> = new Set();
   
   constructor(
     config: Config,
@@ -40,38 +41,14 @@ export class KeeperService {
   }
   
   /**
-   * Start listening for test requests
+   * Start polling for test requests
    */
-  async start(): Promise<void> {
+  start(): void {
     this.isRunning = true;
     logger.info('Keeper service started');
     
-    // Listen to TestRequested events
-    this.contracts.foroRegistry.on(
-      'TestRequested',
-      async (foroId, agentId, requester, fee, timestamp, event) => {
-        logger.info(
-          {
-            foroId: foroId.toString(),
-            agentId: agentId.toString(),
-            requester,
-            fee: ethers.formatEther(fee),
-          },
-          'Test requested'
-        );
-        
-        try {
-          await this.handleTestRequest(
-            BigInt(foroId.toString()),
-            BigInt(agentId.toString())
-          );
-        } catch (error) {
-          logger.error({ error, foroId: foroId.toString() }, 'Failed to handle test request');
-        }
-      }
-    );
-    
-    logger.info('Listening for TestRequested events...');
+    // Start polling for jobs
+    void this.pollForJobs();
     
     // Start background forfeit monitoring
     this.startForfeitMonitoring();
@@ -82,8 +59,78 @@ export class KeeperService {
    */
   stop(): void {
     this.isRunning = false;
-    this.contracts.foroRegistry.removeAllListeners();
+    void this.contracts.foroRegistry.removeAllListeners();
     logger.info('Keeper service stopped');
+  }
+  
+  /**
+   * Poll for available jobs
+   */
+  private async pollForJobs(): Promise<void> {
+    logger.info({ pollIntervalMs: this.config.pollIntervalMs }, 'Starting job polling');
+    
+    while (this.isRunning) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const allJobs = await (this.contracts.foroRegistry as any).getAllTestJobs();
+        
+        // Filter for REQUESTED jobs only (JobStatus.REQUESTED = 0)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+        const availableJobs = (allJobs as any[]).filter((job: any) => job.status === 0);
+        
+        logger.debug(
+          { 
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            totalJobs: (allJobs as any[]).length, 
+            availableJobs: availableJobs.length,
+            processedCount: this.processedJobs.size
+          },
+          'Polling for jobs'
+        );
+        
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        for (const job of availableJobs as any[]) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+          const foroIdStr = job.foroId.toString() as string;
+          
+          // Skip if already processed
+          if (this.processedJobs.has(foroIdStr)) {
+            continue;
+          }
+          
+          // Mark as processed immediately to prevent duplicates
+          this.processedJobs.add(foroIdStr);
+          
+          logger.info(
+            {
+              foroId: foroIdStr,
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+              agentId: job.agentId.toString() as string,
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+              requester: job.requester as string,
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+              fee: ethers.formatEther(job.testFee),
+            },
+            'New test job found'
+          );
+          
+          // Process job asynchronously
+          void (async () => {
+            try {
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+              await this.handleTestRequest(job.foroId as bigint, job.agentId as bigint);
+            } catch (error) {
+              logger.error({ error, foroId: foroIdStr }, 'Failed to handle test request');
+            }
+          })();
+        }
+      } catch (error) {
+        logger.error({ error }, 'Error polling for jobs');
+      }
+      
+      // Wait before next poll
+      await new Promise(resolve => setTimeout(resolve, this.config.pollIntervalMs));
+    }
   }
   
   /**
