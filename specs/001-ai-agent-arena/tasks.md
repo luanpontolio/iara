@@ -238,16 +238,16 @@
 
 ---
 
-## Phase 7: User Story 5 - Using Verified Agents via x402 Payment Protocol (Priority: P4)
+## Phase 7: User Story 5 - Using Agents via x402 Payment Protocol (Priority: P4)
 
-**Goal**: Users can call VERIFIED/ELITE agents via x402 payment proxy, frontend handles 402 challenges and payment verification
+**Goal**: Users can call agents via x402 payment proxy (any status), frontend displays verification status prominently to help users make informed payment decisions
 
-**Independent Test**: Call VERIFIED agent endpoint, receive 402 response, construct x402 payment, resubmit with payment, verify service delivered
+**Independent Test**: Call any agent endpoint (PENDING, PROBATION, VERIFIED, ELITE, or FAILED), receive 402 response, construct x402 payment, resubmit with payment, verify service delivered (user assumes risk for unverified agents based on displayed status badges)
 
 ### Tests for User Story 5
 
-- [ ] T074 [P] [US5] E2E test for x402 payment flow in packages/frontend/tests/e2e/x402.spec.ts (test 402 response, payment construction, service delivery)
-- [ ] T075 [P] [US5] Unit test for x402 payment verification in packages/frontend/tests/api/ (mock facilitator responses, test verify/settle logic)
+- [ ] T074 [P] [US5] E2E test for x402 payment flow in packages/frontend/tests/e2e/x402.spec.ts (test 402 response, payment construction, service delivery for both PENDING and VERIFIED agents, verify status warnings display correctly)
+- [ ] T075 [P] [US5] Unit test for x402 payment verification in packages/frontend/tests/api/ (mock facilitator responses, test verify/settle logic, verify no status-based restrictions in proxy)
 
 ### Implementation for User Story 5
 
@@ -261,24 +261,25 @@
 
 #### Frontend UI Components
 
-- [ ] T081 [P] [US5] Implement StatusBadge.tsx in packages/frontend/src/components/ (display agent status with colors: PENDING, PROBATION, VERIFIED, ELITE, FAILED)
-- [ ] T082 [P] [US5] Implement AgentCard.tsx in packages/frontend/src/components/ (display agent summary: name, status, score, test count, creator)
+- [ ] T081 [P] [US5] Implement StatusBadge.tsx in packages/frontend/src/components/ (display agent status with colors and icons: PENDING/PROBATION with ⚠️ warning, VERIFIED with ✓ checkmark, ELITE with ⭐ star, FAILED with ✗ error)
+- [ ] T082 [P] [US5] Implement AgentCard.tsx in packages/frontend/src/components/ (display agent summary: name, status badge, score, test count, creator, with status-aware tooltips)
 - [ ] T083 [P] [US5] Implement TestHistory.tsx in packages/frontend/src/components/ (display test results with chatId links to 0G Chain explorer, scores, timestamps)
 - [ ] T084 [P] [US5] Implement AgentContractViewer.tsx in packages/frontend/src/components/ (render test cases and evaluation criteria from Agent Contract JSON)
 - [ ] T085 [P] [US5] Implement RegisterWizard.tsx in packages/frontend/src/components/ (3-step wizard: mint ERC-8004, edit Agent Contract JSON, call registerAgent)
 
 #### Frontend Pages
 
-- [ ] T086 [US5] Implement app/[foroId]/page.tsx in packages/frontend/src/app/[foroId]/ (agent detail view: header, Agent Contract, score, test history, CTAs for REQUEST TEST / USE VIA x402)
+- [ ] T086 [US5] Implement app/[foroId]/page.tsx in packages/frontend/src/app/[foroId]/ (agent detail view: header with prominent status badge, Agent Contract viewer, score history, test results with chatId links, and CTAs: "REQUEST TEST · 0.001 ETH" (all statuses), "PAY & USE" with x402 integration (all statuses) with status-aware tooltip warnings for PENDING/PROBATION/FAILED agents)
+- [ ] T086b [P] [US5] Add status-aware warnings and tooltips in packages/frontend/src/app/[foroId]/page.tsx (PENDING/PROBATION: "⚠️ This agent is not verified. Payments are at your own risk. Consider requesting a test first." | VERIFIED: "✓ This agent is verified by 3+ independent tests" | ELITE: "⭐ Elite agent with 10+ tests and excellent performance" | FAILED: "✗ This agent failed verification tests. Use with caution.")
 - [ ] T087 [US5] Implement app/register/page.tsx in packages/frontend/src/app/register/ (registration wizard with 3 steps, form validation, transaction handling)
 - [ ] T088 [US5] Implement app/layout.tsx in packages/frontend/src/app/ (root layout with wallet connection, navigation, ToastContainer for notifications)
 
 #### x402 API Proxy
 
-- [ ] T089 [US5] Implement app/api/use/[foroId]/route.ts in packages/frontend/src/app/api/use/[foroId]/ (POST handler: check payment header, return 402 with x402 challenge if missing, verify payment via facilitator /verify and /settle, forward to agent endpoint, return response)
+- [ ] T089 [US5] Implement app/api/use/[foroId]/route.ts in packages/frontend/src/app/api/use/[foroId]/ (POST handler: check payment header, return 402 with x402 challenge if missing, verify payment via facilitator /verify and /settle, forward to agent endpoint, return response - NO status-based restrictions, agent status is informational only)
 - [ ] T090 [US5] Add x402 facilitator integration in packages/frontend/src/lib/ (verifyX402Payment helper, construct payment instructions for Base USDC or Tempo USDC.e)
 
-**Checkpoint**: At this point, frontend is functional with agent discovery, testing, and x402 usage, independently testable
+**Checkpoint**: At this point, frontend is functional with agent discovery, testing, and x402 usage (any status), status-aware UI warnings guide users without restricting access, independently testable
 
 ---
 
@@ -314,7 +315,7 @@
   - US2 (P2): Can start after Foundational - Depends on US1 (ForoRegistry core)
   - US3 (P3): Depends on US2 (needs result submission to contest)
   - US4 (P2): Depends on US2 (needs finalization to update scores)
-  - US5 (P4): Depends on US1, US2, US4 (needs VERIFIED agents to use via x402)
+  - US5 (P4): Depends on US1, US2, US4 (needs reputation system to display status badges, but x402 works for any status)
 - **Polish (Phase 6)**: Depends on all desired user stories being complete
 
 ### Critical Path (for MVP - US1 + US2 only)
@@ -422,16 +423,16 @@ With 3 developers:
 
 ## Task Count Summary
 
-- **Total Tasks**: 109 (updated: added T043b, T045b, T053b for test failure handling; BugBounty removed from MVP)
+- **Total Tasks**: 110 (updated: added T043b, T045b, T053b for test failure handling, T086b for status-aware warnings; BugBounty removed from MVP, VERIFIED restriction removed from x402)
 - **Phase 1 (Setup)**: 9 tasks
 - **Phase 2 (Foundational)**: 11 tasks (BLOCKS all stories)
 - **Phase 3 (US1)**: 9 tasks
 - **Phase 4 (US2)**: 29 tasks (updated: +3 for test failure handling and forfeit monitoring)
 - **Phase 5 (US3)**: 8 tasks
 - **Phase 6 (US4)**: 11 tasks
-- **Phase 7 (US5)**: 16 tasks
+- **Phase 7 (US5)**: 17 tasks (updated: +1 for status-aware warnings, removed status enforcement complexity)
 - **Phase 6 (Polish)**: 14 tasks
 
 **MVP Scope** (US1 + US2): 38 US tasks + 9 setup + 11 foundational + 7 polish = **65 tasks**
 
-**Parallel Opportunities Identified**: 38+ tasks marked with [P] can run in parallel, reducing wall-clock time by ~40% with adequate team size
+**Parallel Opportunities Identified**: 39+ tasks marked with [P] can run in parallel, reducing wall-clock time by ~40% with adequate team size
