@@ -22,7 +22,16 @@ interface IForoRegistry {
         SUBMITTED,
         CONTESTED,
         FINALIZED,
-        REFUNDED
+        REFUNDED,
+        FAILED
+    }
+    
+    enum FailureReason {
+        TIMEOUT,
+        UNREACHABLE,
+        INVALID_RESPONSE,
+        ENDPOINT_ERROR,
+        TEE_UNAVAILABLE
     }
     
     struct Agent {
@@ -63,6 +72,30 @@ interface IForoRegistry {
         bool teeVerified;
         uint256 submissionTimestamp;
         bool finalized;
+    }
+    
+    struct Contestation {
+        uint256 contestationId;
+        uint256 foroId;
+        address contestant;
+        uint256 contestStake;
+        string evidenceURI;
+        bytes32 evidenceHash;
+        uint256 contestTimestamp;
+        bool resolved;
+        bool contestantWins;
+    }
+    
+    struct Keeper {
+        address keeperAddress;
+        uint256 stakedAmount;
+        uint256 jobsCompleted;
+        uint256 jobsContested;
+        uint256 contestationsWon;
+        uint256 contestationsLost;
+        uint256 totalEarned;
+        bool active;
+        uint256 registrationTimestamp;
     }
     
     event AgentRegistered(
@@ -120,6 +153,24 @@ interface IForoRegistry {
         bool contestantWins
     );
     
+    event TestFailed(
+        uint256 indexed foroId,
+        FailureReason failureReason,
+        string errorDetails
+    );
+    
+    event TestFailureFinalized(
+        uint256 indexed foroId,
+        address indexed requester,
+        uint256 refundAmount
+    );
+    
+    event KeeperRegistered(
+        address indexed keeperAddress,
+        uint256 stakedAmount,
+        uint256 timestamp
+    );
+    
     function registerAgent(
         address erc8004Address,
         uint256 erc8004AgentId
@@ -154,6 +205,20 @@ interface IForoRegistry {
     function resolveContestation(uint256 foroId, bool contestantWins) external;
     
     function forfeitStake(uint256 foroId) external;
+    
+    function submitTestFailed(
+        uint256 foroId,
+        FailureReason failureReason,
+        string calldata errorDetails
+    ) external;
+    
+    function finalizeTestFailure(uint256 foroId) external;
+    
+    function registerKeeper() external payable;
+    
+    function getKeeperWeight(address keeper) external view returns (uint256 weight);
+    
+    function getKeeper(address keeper) external view returns (Keeper memory);
     
     function getAgent(uint256 foroId) external view returns (Agent memory agent);
     
