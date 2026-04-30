@@ -4,16 +4,19 @@ pragma solidity ^0.8.20;
 import {Test, console2} from "forge-std/Test.sol";
 import {ForoRegistry} from "../src/ForoRegistry.sol";
 import {MockERC8004} from "../src/MockERC8004.sol";
+import {AgentVault} from "../src/AgentVault.sol";
 import {IForoRegistry} from "../src/interfaces/IForoRegistry.sol";
 import {IERC8004} from "../src/interfaces/IERC8004.sol";
 
 contract ForoRegistryTest is Test {
     ForoRegistry public registry;
     MockERC8004 public erc8004;
+    AgentVault public vault;
     
     address public alice;
     address public bob;
     address public keeper;
+    address public protocol;
     
     event AgentRegistered(
         uint256 indexed foroId,
@@ -27,12 +30,18 @@ contract ForoRegistryTest is Test {
         alice = makeAddr("alice");
         bob = makeAddr("bob");
         keeper = makeAddr("keeper");
+        protocol = makeAddr("protocol");
         
         erc8004 = new MockERC8004();
-        registry = new ForoRegistry();
+        vault = new AgentVault(protocol);
+        registry = new ForoRegistry(address(vault));
+        
+        // Transfer vault ownership to registry
+        vault.transferOwnership(address(registry));
         
         vm.label(address(erc8004), "ERC8004");
         vm.label(address(registry), "ForoRegistry");
+        vm.label(address(vault), "AgentVault");
     }
     
     // ============================================
@@ -227,5 +236,365 @@ contract ForoRegistryTest is Test {
         assertTrue(modifiedHash != storedHash, "ERC8004 metadata has changed");
         
         vm.stopPrank();
+    }
+    
+    // ============================================
+    // Phase 4: User Story 2 Tests (T030-T036)
+    // ============================================
+    
+    // Helper: Register a sample agent for testing
+    function _registerSampleAgent() internal returns (uint256 foroId) {
+        vm.startPrank(alice);
+        uint256 erc8004AgentId = erc8004.register("ipfs://agent-metadata");
+        
+        string memory agentContract = '{"category":"url-summarizer","version":"1.0.0","testCases":[]}';
+        erc8004.setMetadata(erc8004AgentId, "foro:contract", bytes(agentContract));
+        
+        foroId = registry.registerAgent(address(erc8004), erc8004AgentId);
+        vm.stopPrank();
+    }
+    
+    // T030: Unit test for requestTest()
+    function test_RequestTest() public {
+        uint256 agentId = _registerSampleAgent();
+        uint256 testFee = 0.001 ether;
+        
+        vm.deal(bob, 1 ether);
+        vm.startPrank(bob);
+        
+        uint256 foroId = registry.requestTest{value: testFee}(agentId);
+        
+        // Verify test job was created
+        IForoRegistry.TestJob memory job = registry.getTestJob(foroId);
+        assertEq(job.foroId, foroId, "foroId should match");
+        assertEq(job.agentId, agentId, "agentId should match");
+        assertEq(job.requester, bob, "requester should be bob");
+        assertEq(job.testFee, testFee, "testFee should match");
+        assertEq(uint256(job.status), uint256(IForoRegistry.JobStatus.REQUESTED), "status should be REQUESTED");
+        assertEq(job.keeperAddress, address(0), "keeper should be zero address initially");
+        
+        vm.stopPrank();
+    }
+    
+    function test_RequestTest_InsufficientFee() public {
+        uint256 agentId = _registerSampleAgent();
+        
+        vm.deal(bob, 1 ether);
+        vm.startPrank(bob);
+        
+        // Should revert if fee is too low
+        vm.expectRevert("Insufficient test fee");
+        registry.requestTest{value: 0.0001 ether}(agentId);
+        
+        vm.stopPrank();
+    }
+    
+    function test_RequestTest_InvalidAgent() public {
+        vm.deal(bob, 1 ether);
+        vm.startPrank(bob);
+        
+        // Should revert for non-existent agent
+        vm.expectRevert("Invalid foroId");
+        registry.requestTest{value: 0.001 ether}(999);
+        
+        vm.stopPrank();
+    }
+    
+    // T031: Unit test for commit-reveal mechanism
+    function test_CommitRevealMechanism() public {
+        uint256 agentId = _registerSampleAgent();
+        uint256 testFee = 0.001 ether;
+        
+        // Bob requests test
+        vm.deal(bob, 1 ether);
+        vm.prank(bob);
+        uint256 foroId = registry.requestTest{value: testFee}(agentId);
+        
+        // Keeper prepares commit
+        string memory testCasesJSON = '{"testCases":[{"id":"tc-01"}]}';
+        bytes32 salt = keccak256("random-salt");
+        bytes32 commitHash = keccak256(abi.encode(testCasesJSON, salt));
+        
+        // Keeper claims job with stake
+        uint256 requiredStake = testFee * 2;
+        vm.deal(keeper, 1 ether);
+        vm.startPrank(keeper);
+        
+        registry.claimJob{value: requiredStake}(foroId, commitHash);
+        
+        // Verify job was claimed
+        IForoRegistry.TestJob memory job = registry.getTestJob(foroId);
+        assertEq(job.keeperAddress, keeper, "keeper should be set");
+        assertEq(job.keeperStake, requiredStake, "stake should match");
+        assertEq(job.commitHash, commitHash, "commitHash should match");
+        assertEq(uint256(job.status), uint256(IForoRegistry.JobStatus.COMMITTED), "status should be COMMITTED");
+        assertGt(job.commitTimestamp, 0, "commitTimestamp should be set");
+        
+        // Keeper reveals test inputs
+        registry.revealTestInputs(foroId, testCasesJSON, salt);
+        
+        // Verify reveal succeeded
+        IForoRegistry.TestJob memory jobAfterReveal = registry.getTestJob(foroId);
+        assertEq(uint256(jobAfterReveal.status), uint256(IForoRegistry.JobStatus.REVEALED), "status should be REVEALED");
+        assertGt(jobAfterReveal.revealTimestamp, 0, "revealTimestamp should be set");
+        
+        vm.stopPrank();
+    }
+    
+    function test_ClaimJob_InsufficientStake() public {
+        uint256 agentId = _registerSampleAgent();
+        uint256 testFee = 0.001 ether;
+        
+        vm.deal(bob, 1 ether);
+        vm.prank(bob);
+        uint256 foroId = registry.requestTest{value: testFee}(agentId);
+        
+        bytes32 commitHash = keccak256("test");
+        
+        vm.deal(keeper, 1 ether);
+        vm.startPrank(keeper);
+        
+        // Should revert if stake is less than 2x fee
+        vm.expectRevert("Insufficient stake");
+        registry.claimJob{value: testFee}(foroId, commitHash); // Only 1x fee
+        
+        vm.stopPrank();
+    }
+    
+    function test_RevealTestInputs_HashMismatch() public {
+        uint256 agentId = _registerSampleAgent();
+        uint256 testFee = 0.001 ether;
+        
+        vm.deal(bob, 1 ether);
+        vm.prank(bob);
+        uint256 foroId = registry.requestTest{value: testFee}(agentId);
+        
+        string memory testCasesJSON = '{"testCases":[]}';
+        bytes32 salt = keccak256("salt");
+        bytes32 commitHash = keccak256(abi.encode(testCasesJSON, salt));
+        
+        uint256 requiredStake = testFee * 2;
+        vm.deal(keeper, 1 ether);
+        vm.startPrank(keeper);
+        
+        registry.claimJob{value: requiredStake}(foroId, commitHash);
+        
+        // Try to reveal with different data - should revert
+        string memory wrongTestCases = '{"testCases":["wrong"]}';
+        vm.expectRevert("Hash mismatch");
+        registry.revealTestInputs(foroId, wrongTestCases, salt);
+        
+        vm.stopPrank();
+    }
+    
+    // T032: Unit test for submitResult()
+    function test_SubmitResult() public {
+        uint256 agentId = _registerSampleAgent();
+        uint256 testFee = 0.001 ether;
+        
+        // Request, claim, and reveal
+        vm.deal(bob, 1 ether);
+        vm.prank(bob);
+        uint256 foroId = registry.requestTest{value: testFee}(agentId);
+        
+        string memory testCasesJSON = '{"testCases":[]}';
+        bytes32 salt = keccak256("salt");
+        bytes32 commitHash = keccak256(abi.encode(testCasesJSON, salt));
+        
+        uint256 requiredStake = testFee * 2;
+        vm.deal(keeper, 1 ether);
+        vm.startPrank(keeper);
+        
+        registry.claimJob{value: requiredStake}(foroId, commitHash);
+        registry.revealTestInputs(foroId, testCasesJSON, salt);
+        
+        // Submit result
+        uint256 score = 7500; // 75.00
+        uint256 latency = 1500; // ms
+        uint256 rounds = 3;
+        bytes32 chatId = keccak256("chat-id");
+        
+        registry.submitResult(foroId, score, latency, rounds, chatId);
+        
+        // Verify result was stored
+        IForoRegistry.TestResult memory result = registry.getTestResult(foroId);
+        assertEq(result.foroId, foroId, "foroId should match");
+        assertEq(result.score, score, "score should match");
+        assertEq(result.avgLatencyMs, latency, "latency should match");
+        assertEq(result.rounds, rounds, "rounds should match");
+        assertEq(result.chatId, chatId, "chatId should match");
+        assertEq(result.teeVerified, true, "teeVerified should be true with valid chatId");
+        assertGt(result.submissionTimestamp, 0, "submissionTimestamp should be set");
+        assertEq(result.finalized, false, "should not be finalized yet");
+        
+        // Verify job status updated
+        IForoRegistry.TestJob memory job = registry.getTestJob(foroId);
+        assertEq(uint256(job.status), uint256(IForoRegistry.JobStatus.SUBMITTED), "status should be SUBMITTED");
+        assertGt(job.contestationDeadline, block.timestamp, "contestation deadline should be in future");
+        
+        vm.stopPrank();
+    }
+    
+    function test_SubmitResult_WithoutTEEProof() public {
+        uint256 agentId = _registerSampleAgent();
+        uint256 testFee = 0.001 ether;
+        
+        vm.deal(bob, 1 ether);
+        vm.prank(bob);
+        uint256 foroId = registry.requestTest{value: testFee}(agentId);
+        
+        string memory testCasesJSON = '{"testCases":[]}';
+        bytes32 salt = keccak256("salt");
+        bytes32 commitHash = keccak256(abi.encode(testCasesJSON, salt));
+        
+        uint256 requiredStake = testFee * 2;
+        vm.deal(keeper, 1 ether);
+        vm.startPrank(keeper);
+        
+        registry.claimJob{value: requiredStake}(foroId, commitHash);
+        registry.revealTestInputs(foroId, testCasesJSON, salt);
+        
+        // Submit result without TEE proof (chatId = 0)
+        registry.submitResult(foroId, 7500, 1500, 3, bytes32(0));
+        
+        // Verify score is forced to 0 when teeVerified=false
+        IForoRegistry.TestResult memory result = registry.getTestResult(foroId);
+        assertEq(result.score, 0, "score should be 0 without TEE proof");
+        assertEq(result.teeVerified, false, "teeVerified should be false");
+        
+        vm.stopPrank();
+    }
+    
+    // T033: Unit test for finalizeResult()
+    function test_FinalizeResult() public {
+        uint256 agentId = _registerSampleAgent();
+        uint256 testFee = 0.001 ether;
+        
+        // Full flow: request → claim → reveal → submit
+        vm.deal(bob, 1 ether);
+        vm.prank(bob);
+        uint256 foroId = registry.requestTest{value: testFee}(agentId);
+        
+        string memory testCasesJSON = '{"testCases":[]}';
+        bytes32 salt = keccak256("salt");
+        bytes32 commitHash = keccak256(abi.encode(testCasesJSON, salt));
+        
+        uint256 requiredStake = testFee * 2;
+        vm.deal(keeper, 1 ether);
+        vm.prank(keeper);
+        registry.claimJob{value: requiredStake}(foroId, commitHash);
+        
+        vm.prank(keeper);
+        registry.revealTestInputs(foroId, testCasesJSON, salt);
+        
+        vm.prank(keeper);
+        registry.submitResult(foroId, 7500, 1500, 3, keccak256("chat-id"));
+        
+        // Wait for contestation window to expire (1 hour)
+        vm.warp(block.timestamp + 1 hours + 1);
+        
+        // Finalize result
+        uint256 keeperBalanceBefore = keeper.balance;
+        vm.prank(keeper);
+        registry.finalizeResult(foroId);
+        
+        // Verify result is finalized
+        IForoRegistry.TestResult memory result = registry.getTestResult(foroId);
+        assertEq(result.finalized, true, "result should be finalized");
+        
+        // Verify job status
+        IForoRegistry.TestJob memory job = registry.getTestJob(foroId);
+        assertEq(uint256(job.status), uint256(IForoRegistry.JobStatus.FINALIZED), "status should be FINALIZED");
+        
+        // Verify stake was returned to keeper
+        uint256 keeperBalanceAfter = keeper.balance;
+        assertGt(keeperBalanceAfter, keeperBalanceBefore, "keeper should receive stake back");
+        
+        // Verify agent stats updated
+        IForoRegistry.Agent memory agent = registry.getAgent(agentId);
+        assertEq(agent.testCount, 1, "testCount should be 1");
+    }
+    
+    function test_FinalizeResult_BeforeContestationWindow() public {
+        uint256 agentId = _registerSampleAgent();
+        uint256 testFee = 0.001 ether;
+        
+        vm.deal(bob, 1 ether);
+        vm.prank(bob);
+        uint256 foroId = registry.requestTest{value: testFee}(agentId);
+        
+        string memory testCasesJSON = '{"testCases":[]}';
+        bytes32 salt = keccak256("salt");
+        bytes32 commitHash = keccak256(abi.encode(testCasesJSON, salt));
+        
+        uint256 requiredStake = testFee * 2;
+        vm.deal(keeper, 1 ether);
+        vm.prank(keeper);
+        registry.claimJob{value: requiredStake}(foroId, commitHash);
+        
+        vm.prank(keeper);
+        registry.revealTestInputs(foroId, testCasesJSON, salt);
+        
+        vm.prank(keeper);
+        registry.submitResult(foroId, 7500, 1500, 3, keccak256("chat-id"));
+        
+        // Try to finalize immediately (contestation window still active)
+        vm.prank(keeper);
+        vm.expectRevert("Contestation window active");
+        registry.finalizeResult(foroId);
+    }
+    
+    // T035: Unit test for forfeitStake() timeout mechanism
+    function test_ForfeitStake_AfterTimeout() public {
+        uint256 agentId = _registerSampleAgent();
+        uint256 testFee = 0.001 ether;
+        
+        vm.deal(bob, 1 ether);
+        vm.prank(bob);
+        uint256 foroId = registry.requestTest{value: testFee}(agentId);
+        
+        bytes32 commitHash = keccak256("test");
+        uint256 requiredStake = testFee * 2;
+        
+        vm.deal(keeper, 1 ether);
+        vm.prank(keeper);
+        registry.claimJob{value: requiredStake}(foroId, commitHash);
+        
+        // Wait for reveal timeout (24 hours)
+        vm.warp(block.timestamp + 24 hours + 1);
+        
+        // Anyone can call forfeitStake after timeout
+        uint256 bobBalanceBefore = bob.balance;
+        vm.prank(alice);
+        registry.forfeitStake(foroId);
+        
+        // Verify stake was slashed
+        IForoRegistry.TestJob memory job = registry.getTestJob(foroId);
+        assertEq(uint256(job.status), uint256(IForoRegistry.JobStatus.REFUNDED), "status should be REFUNDED");
+        
+        // Verify requester received refund
+        uint256 bobBalanceAfter = bob.balance;
+        assertEq(bobBalanceAfter - bobBalanceBefore, testFee, "requester should receive refund");
+    }
+    
+    function test_ForfeitStake_BeforeTimeout() public {
+        uint256 agentId = _registerSampleAgent();
+        uint256 testFee = 0.001 ether;
+        
+        vm.deal(bob, 1 ether);
+        vm.prank(bob);
+        uint256 foroId = registry.requestTest{value: testFee}(agentId);
+        
+        bytes32 commitHash = keccak256("test");
+        uint256 requiredStake = testFee * 2;
+        
+        vm.deal(keeper, 1 ether);
+        vm.prank(keeper);
+        registry.claimJob{value: requiredStake}(foroId, commitHash);
+        
+        // Try to forfeit before timeout - should revert
+        vm.prank(alice);
+        vm.expectRevert("Timeout not reached");
+        registry.forfeitStake(foroId);
     }
 }
