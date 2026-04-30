@@ -559,6 +559,24 @@ contract ForoRegistry is IForoRegistry, Ownable, ReentrancyGuard {
         return _contestations[foroId];
     }
     
+    function getAllTestJobs() external view returns (TestJob[] memory jobs) {
+        uint256 count = 0;
+        for (uint256 i = 1; i < _nextForoId; i++) {
+            if (_testJobs[i].foroId != 0) {
+                count++;
+            }
+        }
+        
+        jobs = new TestJob[](count);
+        uint256 index = 0;
+        for (uint256 i = 1; i < _nextForoId; i++) {
+            if (_testJobs[i].foroId != 0) {
+                jobs[index] = _testJobs[i];
+                index++;
+            }
+        }
+    }
+    
     // ============================================
     // Keeper Management (User Story 4)
     // ============================================
