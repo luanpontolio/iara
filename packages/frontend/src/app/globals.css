@@ -3,25 +3,151 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* ── Backgrounds ─────────────────────────────────────── */
+  --color-bg:             #0A0A0B;
+  --color-surface:        #111113;
+  --color-surface-raised: #161618;
+  --color-surface-hover:  #1A1A1E;
+
+  /* ── Borders ─────────────────────────────────────────── */
+  --color-border:         #1E1E24;
+  --color-border-strong:  #2A2A32;
+  --color-border-focus:   #3D3D47;
+
+  /* ── Foreground ──────────────────────────────────────── */
+  --color-fg-1: #F4F4F8;
+  --color-fg-2: #C4C4CE;
+  --color-fg-3: #9393A0;
+  --color-fg-4: #72727E;
+  --color-fg-5: #52525E;
+
+  /* ── Accent ──────────────────────────────────────────── */
+  --color-accent:       #B8FF4F;
+  --color-accent-muted: #7AB830;
+  --color-accent-dim:   #182800;
+
+  /* ── Semantic ────────────────────────────────────────── */
+  --color-green:       #4ADE80;
+  --color-green-dim:   #0A1F10;
+  --color-red:         #F26B6B;
+  --color-red-dim:     #210A0A;
+  --color-amber:       #E8A935;
+  --color-amber-dim:   #1F1400;
+  --color-blue:        #5C9EE8;
+  --color-blue-dim:    #080F1F;
+  --color-purple:      #A78BFA;
+  --color-purple-dim:  #1A0F2E;
+
+  /* ── Typography (vars set by next/font + geist) ─────── */
+  --font-sans:  var(--font-geist-sans, 'Helvetica Neue', sans-serif);
+  --font-mono:  var(--font-geist-mono, Menlo, Consolas, monospace);
+  /* --font-serif is set by EB_Garamond next/font variable  */
+
+  /* ── Agent status aliases ────────────────────────────── */
+  --status-pending:    var(--color-fg-4);
+  --status-probation:  var(--color-amber);
+  --status-verified:   var(--color-green);
+  --status-elite:      var(--color-accent);
+  --status-failed:     var(--color-red);
+  --status-live:       var(--color-blue);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ── Base ────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  background: var(--color-bg);
+  color: var(--color-fg-1);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html, body, #__next { height: 100%; }
+
+/* ── Scrollbar ───────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: 3px; }
+
+/* ── Tailwind layer: component classes ───────────────────── */
+@layer components {
+
+  /* Status badge */
+  .badge {
+    @apply inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 whitespace-nowrap;
+    font-family: var(--font-mono);
+    border-radius: 999px;
+    width: fit-content;
   }
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  .badge-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
   }
+  .badge-pending    { background: rgba(114,114,126,0.12); color: var(--color-fg-4); }
+  .badge-probation  { background: var(--color-amber-dim);  color: var(--color-amber); }
+  .badge-verified   { background: var(--color-green-dim);  color: var(--color-green); }
+  .badge-elite      { background: var(--color-accent-dim); color: var(--color-accent); }
+  .badge-failed     { background: var(--color-red-dim);    color: var(--color-red); }
+  .badge-live       { background: var(--color-blue-dim);   color: var(--color-blue); }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 text-sm font-medium
+           px-4 py-1.5 border-0 cursor-pointer transition-all duration-150
+           whitespace-nowrap select-none;
+    font-family: var(--font-sans);
+    border-radius: 2px;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary   { background: var(--color-accent); color: #0A0A0B; }
+  .btn-primary:hover { background: #c9ff6e; }
+  .btn-secondary {
+    background: var(--color-surface-raised);
+    color: var(--color-fg-1);
+    border: 1px solid var(--color-border-strong);
+  }
+  .btn-secondary:hover { background: var(--color-surface-hover); }
+  .btn-ghost     { background: transparent; color: var(--color-fg-3); }
+  .btn-ghost:hover { background: var(--color-surface-raised); color: var(--color-fg-1); }
+  .btn-danger    {
+    background: var(--color-red-dim);
+    color: var(--color-red);
+    border: 1px solid rgba(242,107,107,0.2);
+  }
+
+  /* Card */
+  .card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+  }
+
+  /* Data row */
+  .data-row {
+    @apply grid items-center;
+    border-bottom: 1px solid var(--color-border);
+    transition: background 150ms linear;
+  }
+  .data-row:hover { background: var(--color-surface-raised); }
+
+  /* Input */
+  .input {
+    @apply text-sm w-full px-3 py-2 outline-none;
+    font-family: var(--font-mono);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-strong);
+    border-radius: 2px;
+    color: var(--color-fg-1);
+    transition: border-color 150ms, box-shadow 150ms;
+  }
+  .input::placeholder { color: var(--color-fg-5); }
+  .input:focus {
+    border-color: var(--color-border-focus);
+    box-shadow: 0 0 0 2px rgba(184,255,79,0.15);
+  }
+
 }

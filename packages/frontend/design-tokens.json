@@ -1,0 +1,241 @@
+{
+  "global": {
+    "color": {
+      "bg": {
+        "DEFAULT": { "type": "color", "value": "#0A0A0B", "description": "Page background" },
+        "surface": { "type": "color", "value": "#111113", "description": "Card / panel surface" },
+        "surface-raised": { "type": "color", "value": "#161618", "description": "Hover state / raised surface" },
+        "surface-hover": { "type": "color", "value": "#1A1A1E", "description": "Selected / pressed state" }
+      },
+      "border": {
+        "DEFAULT": { "type": "color", "value": "#1E1E24", "description": "Default border" },
+        "strong": { "type": "color", "value": "#2A2A32", "description": "Stronger border / dividers" },
+        "focus": { "type": "color", "value": "#3D3D47", "description": "Focus ring" }
+      },
+      "fg": {
+        "1": { "type": "color", "value": "#F4F4F8", "description": "Primary text" },
+        "2": { "type": "color", "value": "#C4C4CE", "description": "Secondary text" },
+        "3": { "type": "color", "value": "#9393A0", "description": "Tertiary text / labels" },
+        "4": { "type": "color", "value": "#72727E", "description": "Muted text / nav inactive" },
+        "5": { "type": "color", "value": "#52525E", "description": "Disabled / decorative only" }
+      },
+      "accent": {
+        "DEFAULT": { "type": "color", "value": "#B8FF4F", "description": "Primary accent / CTA" },
+        "muted": { "type": "color", "value": "#7AB830", "description": "Accent hover / muted" },
+        "dim": { "type": "color", "value": "#182800", "description": "Accent background dim" }
+      },
+      "green": {
+        "DEFAULT": { "type": "color", "value": "#4ADE80", "description": "Verified / success" },
+        "dim": { "type": "color", "value": "#0A1F10", "description": "Verified background" }
+      },
+      "red": {
+        "DEFAULT": { "type": "color", "value": "#F26B6B", "description": "Failed / error" },
+        "dim": { "type": "color", "value": "#210A0A", "description": "Failed background" }
+      },
+      "amber": {
+        "DEFAULT": { "type": "color", "value": "#E8A935", "description": "Probation / warning" },
+        "dim": { "type": "color", "value": "#1F1400", "description": "Probation background" }
+      },
+      "blue": {
+        "DEFAULT": { "type": "color", "value": "#5C9EE8", "description": "Live / info" },
+        "dim": { "type": "color", "value": "#080F1F", "description": "Live background" }
+      },
+      "purple": {
+        "DEFAULT": { "type": "color", "value": "#A78BFA", "description": "Purple accent" },
+        "dim": { "type": "color", "value": "#1A0F2E", "description": "Purple background" }
+      }
+    },
+    "status": {
+      "pending": { "type": "color", "value": "#72727E", "description": "Agent: pending" },
+      "probation": { "type": "color", "value": "#E8A935", "description": "Agent: probation" },
+      "verified": { "type": "color", "value": "#4ADE80", "description": "Agent: verified" },
+      "elite": { "type": "color", "value": "#B8FF4F", "description": "Agent: elite" },
+      "failed": { "type": "color", "value": "#F26B6B", "description": "Agent: failed" },
+      "live": { "type": "color", "value": "#5C9EE8", "description": "Agent: live / running" }
+    },
+    "font": {
+      "sans": { "type": "fontFamily", "value": "Geist, Helvetica Neue, sans-serif", "description": "UI sans-serif — Geist" },
+      "mono": { "type": "fontFamily", "value": "Geist Mono, Menlo, Consolas, monospace", "description": "Monospace data — Geist Mono" },
+      "serif": { "type": "fontFamily", "value": "EB Garamond, Georgia, serif", "description": "Display serif — EB Garamond" }
+    },
+    "fontSize": {
+      "xs":   { "type": "dimension", "value": "11px" },
+      "sm":   { "type": "dimension", "value": "12px" },
+      "base": { "type": "dimension", "value": "14px" },
+      "md":   { "type": "dimension", "value": "15px" },
+      "lg":   { "type": "dimension", "value": "16px" },
+      "xl":   { "type": "dimension", "value": "20px" },
+      "2xl":  { "type": "dimension", "value": "24px" },
+      "3xl":  { "type": "dimension", "value": "32px" },
+      "4xl":  { "type": "dimension", "value": "48px" },
+      "5xl":  { "type": "dimension", "value": "72px" }
+    },
+    "lineHeight": {
+      "tight":  { "type": "other", "value": "1.2" },
+      "snug":   { "type": "other", "value": "1.4" },
+      "normal": { "type": "other", "value": "1.5" },
+      "relaxed":{ "type": "other", "value": "1.6" }
+    },
+    "fontWeight": {
+      "light":   { "type": "fontWeight", "value": "300" },
+      "regular": { "type": "fontWeight", "value": "400" },
+      "medium":  { "type": "fontWeight", "value": "500" },
+      "semibold":{ "type": "fontWeight", "value": "600" },
+      "bold":    { "type": "fontWeight", "value": "700" }
+    },
+    "letterSpacing": {
+      "tighter": { "type": "dimension", "value": "-0.03em" },
+      "tight":   { "type": "dimension", "value": "-0.015em" },
+      "normal":  { "type": "dimension", "value": "0em" },
+      "wide":    { "type": "dimension", "value": "0.04em" },
+      "wider":   { "type": "dimension", "value": "0.08em" },
+      "widest":  { "type": "dimension", "value": "0.1em" }
+    },
+    "spacing": {
+      "1":  { "type": "dimension", "value": "4px" },
+      "2":  { "type": "dimension", "value": "8px" },
+      "3":  { "type": "dimension", "value": "12px" },
+      "4":  { "type": "dimension", "value": "16px" },
+      "5":  { "type": "dimension", "value": "20px" },
+      "6":  { "type": "dimension", "value": "24px" },
+      "8":  { "type": "dimension", "value": "32px" },
+      "10": { "type": "dimension", "value": "40px" },
+      "12": { "type": "dimension", "value": "48px" },
+      "16": { "type": "dimension", "value": "64px" },
+      "20": { "type": "dimension", "value": "80px" },
+      "24": { "type": "dimension", "value": "96px" }
+    },
+    "borderRadius": {
+      "none": { "type": "borderRadius", "value": "0px" },
+      "sm":   { "type": "borderRadius", "value": "2px" },
+      "md":   { "type": "borderRadius", "value": "4px" },
+      "lg":   { "type": "borderRadius", "value": "6px" },
+      "pill": { "type": "borderRadius", "value": "999px" }
+    },
+    "shadow": {
+      "border": { "type": "boxShadow", "value": { "x": "0", "y": "0", "blur": "0", "spread": "1", "color": "#1E1E24", "type": "dropShadow" } },
+      "raised": { "type": "boxShadow", "value": [
+        { "x": "0", "y": "0", "blur": "0", "spread": "1", "color": "#1E1E24", "type": "dropShadow" },
+        { "x": "0", "y": "2", "blur": "8", "spread": "0", "color": "rgba(0,0,0,0.40)", "type": "dropShadow" }
+      ]},
+      "modal": { "type": "boxShadow", "value": [
+        { "x": "0", "y": "0", "blur": "0", "spread": "1", "color": "#1E1E24", "type": "dropShadow" },
+        { "x": "0", "y": "8", "blur": "32", "spread": "0", "color": "rgba(0,0,0,0.60)", "type": "dropShadow" }
+      ]},
+      "focus": { "type": "boxShadow", "value": { "x": "0", "y": "0", "blur": "0", "spread": "2", "color": "#B8FF4F", "type": "dropShadow" } }
+    },
+    "transition": {
+      "fast": { "type": "other", "value": "150ms" },
+      "base": { "type": "other", "value": "200ms" },
+      "slow": { "type": "other", "value": "300ms" }
+    }
+  },
+  "typography": {
+    "logo": {
+      "type": "typography",
+      "value": {
+        "fontFamily": "EB Garamond, Georgia, serif",
+        "fontWeight": "700",
+        "fontSize": "20px",
+        "letterSpacing": "0em",
+        "textCase": "uppercase",
+        "fontStyle": "italic"
+      },
+      "description": "FORO wordmark — EB Garamond Bold 700 Italic, all caps"
+    },
+    "heading-xl": {
+      "type": "typography",
+      "value": {
+        "fontFamily": "Geist, Helvetica Neue, sans-serif",
+        "fontWeight": "500",
+        "fontSize": "24px",
+        "lineHeight": "1.2",
+        "letterSpacing": "-0.015em"
+      }
+    },
+    "heading-lg": {
+      "type": "typography",
+      "value": {
+        "fontFamily": "Geist, Helvetica Neue, sans-serif",
+        "fontWeight": "500",
+        "fontSize": "15px",
+        "lineHeight": "1.4",
+        "letterSpacing": "0em"
+      }
+    },
+    "body": {
+      "type": "typography",
+      "value": {
+        "fontFamily": "Geist, Helvetica Neue, sans-serif",
+        "fontWeight": "400",
+        "fontSize": "14px",
+        "lineHeight": "1.6"
+      }
+    },
+    "body-sm": {
+      "type": "typography",
+      "value": {
+        "fontFamily": "Geist, Helvetica Neue, sans-serif",
+        "fontWeight": "400",
+        "fontSize": "13px",
+        "lineHeight": "1.5"
+      }
+    },
+    "label": {
+      "type": "typography",
+      "value": {
+        "fontFamily": "Geist, Helvetica Neue, sans-serif",
+        "fontWeight": "500",
+        "fontSize": "10px",
+        "lineHeight": "1.4",
+        "letterSpacing": "0.1em",
+        "textCase": "uppercase"
+      },
+      "description": "Table headers, section labels"
+    },
+    "mono-data": {
+      "type": "typography",
+      "value": {
+        "fontFamily": "Geist Mono, Menlo, Consolas, monospace",
+        "fontWeight": "400",
+        "fontSize": "13px",
+        "lineHeight": "1.5",
+        "letterSpacing": "0em"
+      },
+      "description": "On-chain data — addresses, scores, hashes"
+    },
+    "mono-stat": {
+      "type": "typography",
+      "value": {
+        "fontFamily": "Geist Mono, Menlo, Consolas, monospace",
+        "fontWeight": "400",
+        "fontSize": "28px",
+        "lineHeight": "1",
+        "letterSpacing": "-0.02em"
+      },
+      "description": "Stat card numbers"
+    },
+    "mono-caption": {
+      "type": "typography",
+      "value": {
+        "fontFamily": "Geist Mono, Menlo, Consolas, monospace",
+        "fontWeight": "500",
+        "fontSize": "11px",
+        "lineHeight": "1.4",
+        "letterSpacing": "0.02em"
+      },
+      "description": "Score caption below gauge arc"
+    },
+    "badge": {
+      "type": "typography",
+      "value": {
+        "fontFamily": "Geist Mono, Menlo, Consolas, monospace",
+        "fontWeight": "500",
+        "fontSize": "10px",
+        "lineHeight": "1.4",
+        "letterSpacing": "0.02em"
+      },
+      "description": "Status badge label"
+    }
+  }
+}
