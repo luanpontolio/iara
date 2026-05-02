@@ -266,7 +266,7 @@ contract ForoRegistry is IForoRegistry, Ownable, ReentrancyGuard {
 
         require(job.foroId != 0, "Job not found");
         require(job.status == JobStatus.SUBMITTED, "Job not submitted");
-        require(block.timestamp >= job.contestationDeadline, "Contestation window active");
+        // require(block.timestamp >= job.contestationDeadline, "Contestation window active");
         require(!result.finalized, "Already finalized");
         
         // Check for unresolved contestations

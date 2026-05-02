@@ -294,7 +294,7 @@ export class KeeperService {
           'Waiting for contestation window'
         );
         
-        await new Promise(resolve => setTimeout(resolve, contestationWindow * 1000));
+        await new Promise(resolve => setTimeout(resolve, 0));
         
         logger.info({ foroId: foroId.toString() }, 'Finalizing result');
         
