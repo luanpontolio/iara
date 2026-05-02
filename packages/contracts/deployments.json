@@ -1,0 +1,10 @@
+{
+  "AgentVault": "0x6Cf490383f220a819B85220A551aed851fFD4df5",
+  "ForoRegistry": "0x9412Cce73EC657A71F42707f04Cfe46151428bfF",
+  "MockERC8004": "0x1B81AE900C1eaA0A03016aDa0CeA01bbbdEd1dB1",
+  "chainId": 16602,
+  "deployedAt": 1777642427,
+  "minKeeperStake": 10000000000000000,
+  "protocolTreasury": "0x66cDc21b5db131E3f8E8af0CDB4E455a8393604a",
+  "testFeeAmount": 1000000000000000
+}
