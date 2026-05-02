@@ -18,3 +18,9 @@ export type { UseTabNavigationOptions, UseTabNavigationReturn } from './useTabNa
 
 export { usePanelState } from './usePanelState';
 export type { UsePanelStateOptions, UsePanelStateReturn } from './usePanelState';
+
+export { useAgentRegister } from './useAgentRegister';
+export type { UseAgentRegisterOptions, UseAgentRegisterReturn, TxStep, TxStepStatus } from './useAgentRegister';
+
+export { useRequestTest } from './useRequestTest';
+export type { UseRequestTestOptions, UseRequestTestReturn } from './useRequestTest';
