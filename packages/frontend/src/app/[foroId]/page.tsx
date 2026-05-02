@@ -1,5 +1,5 @@
-import { ForoPage } from '@/components/ForoPage';
+import { AgentDetailPage } from '@/components/pages/AgentDetailPage';
 
 export default function Page() {
-  return <ForoPage />;
+  return <AgentDetailPage />;
 }
