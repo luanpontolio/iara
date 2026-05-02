@@ -24,3 +24,9 @@ export type { UseAgentRegisterOptions, UseAgentRegisterReturn, TxStep, TxStepSta
 
 export { useRequestTest } from './useRequestTest';
 export type { UseRequestTestOptions, UseRequestTestReturn } from './useRequestTest';
+
+export { useAgentList } from './useAgentList';
+export type { UseAgentListReturn } from './useAgentList';
+
+export { useAgentIndexer } from './useAgentIndexer';
+export type { UseAgentIndexerReturn, IndexedAgent } from './useAgentIndexer';
