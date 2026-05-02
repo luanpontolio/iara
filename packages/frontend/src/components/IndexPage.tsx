@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AgentCardWaiting, AgentCardLive, AgentCardResult, type Agent } from './AgentCard';
 
 // ── Mock data ─────────────────────────────────────────────────────────────────
@@ -223,6 +224,7 @@ function SubHeader({ count, label }: { count: number; label: string }) {
 // ── IndexPage ─────────────────────────────────────────────────────────────────
 
 export function IndexPage() {
+  const router = useRouter();
   const [hoveredVerifyCTA, setHoveredVerifyCTA] = useState(false);
   const [queueOpen, setQueueOpen] = useState(false);
   const [doneOpen,  setDoneOpen]  = useState(false);
@@ -348,7 +350,7 @@ export function IndexPage() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 20px 24px' }}>
                   {WAITING.map(a => (
-                    <AgentCardWaiting key={a.id} agent={a} />
+                    <AgentCardWaiting key={a.id} agent={a} onClick={() => router.push(`/${a.id}`)} />
                   ))}
                 </div>
               )}
@@ -380,7 +382,7 @@ export function IndexPage() {
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px 24px', display: 'flex', flexDirection: 'column', gap: 8 }}>
               {LIVE.map(a => (
-                <AgentCardLive key={a.id} agent={a} />
+                <AgentCardLive key={a.id} agent={a} onClick={() => router.push(`/${a.id}`)} />
               ))}
             </div>
           </div>
@@ -417,7 +419,7 @@ export function IndexPage() {
                 <div style={{ padding: '0 20px 24px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {VERIFIED.map(a => (
-                      <AgentCardResult key={a.id} agent={a} />
+                      <AgentCardResult key={a.id} agent={a} onClick={() => router.push(`/${a.id}`)} />
                     ))}
                   </div>
                   {FAILED.length > 0 && (
@@ -428,7 +430,7 @@ export function IndexPage() {
                       />
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {FAILED.map(a => (
-                          <AgentCardResult key={a.id} agent={a} />
+                          <AgentCardResult key={a.id} agent={a} onClick={() => router.push(`/${a.id}`)} />
                         ))}
                       </div>
                     </>

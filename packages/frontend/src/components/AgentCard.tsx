@@ -45,14 +45,16 @@ function scoreMeaning(score: number, status: AgentStatus): string {
 // overrideColor bypasses the score-based color (used for live/blue fill).
 // showFill=false renders track only — no fill, needle parked at left.
 
-interface GaugeProps {
+export interface GaugeProps {
   score: number;
   status: AgentStatus;
   overrideColor?: string | undefined;
   showFill?: boolean | undefined;
+  svgWidth?: number;
+  svgHeight?: number;
 }
 
-function Gauge({ score, status, overrideColor, showFill = true }: GaugeProps) {
+export function Gauge({ score, status, overrideColor, showFill = true, svgWidth = 104, svgHeight = 62 }: GaugeProps) {
   const color       = overrideColor ?? scoreColor(score, status);
   const isPending   = status === 'pending' && !overrideColor;
   const needleColor = isPending ? '#3D3D47' : color;
@@ -71,7 +73,7 @@ function Gauge({ score, status, overrideColor, showFill = true }: GaugeProps) {
   const ny = cy + r * 0.72 * Math.sin(toRad(nDeg));
 
   return (
-    <svg width={104} height={62} viewBox="0 0 128 80" style={{ display: 'block' }}>
+    <svg width={svgWidth} height={svgHeight} viewBox="0 0 128 80" style={{ display: 'block' }}>
       <path d={trackPath} stroke="#1E1E24" strokeWidth={5} fill="none" strokeLinecap="round" />
       {showFill && s > 0 && (
         <path d={fillPath} stroke={color} strokeWidth={5} fill="none" strokeLinecap="round" />
@@ -298,7 +300,7 @@ export function AgentCardResult({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <div style={{ padding: '10px 12px 0' }}>
+      <div style={{ padding: '10px 12px 0', display: 'flex', justifyContent: 'center' }}>
         <StatusBadge status={agent.status} size="xs" />
       </div>
 
