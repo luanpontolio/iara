@@ -14,7 +14,11 @@
     "test:coverage": "vitest run --coverage",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "mock-agent:register": "tsx scripts/register-mock-agent.ts",
+    "mock-agent:serve": "tsx src/mock-agent/server.ts",
+    "mock-agent:request-test": "tsx scripts/request-test.ts",
+    "test:full-flow": "tsx scripts/test-full-flow.ts"
   },
   "dependencies": {
     "@foro/types": "workspace:*",
