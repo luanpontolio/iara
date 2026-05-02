@@ -420,9 +420,104 @@ With 3 developers:
 
 ---
 
+## Phase 10: Frontend Atomic Design Refactoring
+
+**Purpose**: Refactor frontend to follow React best practices and atomic design principles
+
+**Current Issues**:
+- No atomic structure (all components in flat folder)
+- Massive files (IndexPage: 448 lines, AgentCard: 388 lines, ForoPage: 449 lines)
+- 100% inline styles (TailwindCSS installed but unused)
+- Component duplication (3 AgentCard variants)
+- No design system (hard-coded colors/spacing)
+- Mixed concerns (no separation of UI and business logic)
+
+### Foundation - Design System
+
+- [X] T600 [P] [FE] Create `packages/frontend/src/lib/theme/tokens.ts` with design tokens (colors, spacing, typography, shadows, borders, transitions)
+- [X] T601 [P] [FE] Create `packages/frontend/src/lib/theme/index.ts` with ThemeProvider and useTheme hook
+- [X] T602 [P] [FE] Create `packages/frontend/src/lib/utils/styles.ts` with cn(), createVariants(), responsive() utilities
+- [X] T603 [P] [FE] Create `packages/frontend/src/lib/utils/formatters.ts` with formatAddress, formatScore, formatLatency, formatCurrency, etc.
+- [X] T604 [P] [FE] Create `packages/frontend/src/lib/constants/index.ts` with app-wide constants (MONO, SANS, SERIF, STATUS_CONFIG, etc.)
+- [X] T605 [P] [FE] Install dependencies: clsx, tailwind-merge
+
+### Atoms - Basic Building Blocks
+
+- [X] T606 [P] [FE] Create `packages/frontend/src/components/atoms/Button/Button.tsx` with variants (primary, secondary, ghost) and sizes
+- [X] T607 [P] [FE] Create `packages/frontend/src/components/atoms/Text/Text.tsx` with variants (h1-h6, body, caption, label, code)
+- [X] T608 [P] [FE] Create `packages/frontend/src/components/atoms/Badge/Badge.tsx` - refactor StatusBadge to use design tokens
+- [X] T609 [P] [FE] Create `packages/frontend/src/components/atoms/Divider/Divider.tsx` with orientation (horizontal/vertical)
+- [X] T610 [P] [FE] Create `packages/frontend/src/components/atoms/Icon/Icon.tsx` wrapper for icon system
+- [X] T611 [P] [FE] Create `packages/frontend/src/components/atoms/Spinner/Spinner.tsx` for loading states
+- [X] T612 [P] [FE] Create barrel export `packages/frontend/src/components/atoms/index.ts`
+
+### Molecules - Simple Compositions
+
+- [X] T613 [P] [FE] Create `packages/frontend/src/components/molecules/Card/Card.tsx` with CardShell, CardHeader, CardContent, CardFooter
+- [X] T614 [P] [FE] Create `packages/frontend/src/components/molecules/StatCard/StatCard.tsx`
+- [X] T615 [P] [FE] Create `packages/frontend/src/components/molecules/TabNav/TabNav.tsx` with TabList, Tab, TabPanel
+- [X] T616 [P] [FE] Create `packages/frontend/src/components/molecules/InfoRow/InfoRow.tsx`
+- [X] T617 [P] [FE] Create `packages/frontend/src/components/molecules/ProgressBar/ProgressBar.tsx`
+- [X] T618 [P] [FE] Create `packages/frontend/src/components/molecules/Tooltip/Tooltip.tsx`
+- [X] T619 [P] [FE] Create barrel export `packages/frontend/src/components/molecules/index.ts`
+
+### Organisms - Complex Components
+
+- [X] T620 [P] [FE] Create `packages/frontend/src/components/organisms/AgentCard/GaugeChart.tsx` - extract Gauge as separate organism
+- [X] T621 [FE] Create `packages/frontend/src/components/organisms/AgentCard/AgentCard.tsx` - unified component with variant prop (waiting/live/result)
+- [X] T622 [P] [FE] Create `packages/frontend/src/components/organisms/Navigation/Navigation.tsx` - refactor Nav to use atoms/molecules
+- [X] T623 [P] [FE] Create `packages/frontend/src/components/organisms/Header/Header.tsx` - extract header patterns
+- [X] T624 [P] [FE] Create `packages/frontend/src/components/organisms/AgentTable/AgentTable.tsx` - extract table from Dashboard
+- [X] T625 [P] [FE] Create `packages/frontend/src/components/organisms/TestResultsPanel/TestResultsPanel.tsx`
+- [X] T626 [P] [FE] Create barrel export `packages/frontend/src/components/organisms/index.ts`
+
+### Custom Hooks - Business Logic Separation
+
+- [X] T627 [P] [FE] Create `packages/frontend/src/hooks/useHover.ts` - extract hover state management
+- [X] T628 [P] [FE] Create `packages/frontend/src/hooks/useAgentStatus.ts` - encapsulate agent status logic
+- [X] T629 [P] [FE] Create `packages/frontend/src/hooks/useAgentFilters.ts` - extract filtering/grouping logic
+- [X] T630 [P] [FE] Create `packages/frontend/src/hooks/useTabNavigation.ts` - extract tab navigation state
+- [X] T631 [P] [FE] Create `packages/frontend/src/hooks/usePanelState.ts` - extract panel open/close logic
+- [X] T632 [P] [FE] Create barrel export `packages/frontend/src/hooks/index.ts`
+
+### Style System Migration
+
+- [X] T633 [FE] Update `packages/frontend/tailwind.config.ts` to extend design tokens
+- [ ] T634 [FE] Create `packages/frontend/src/styles/globals.css` with CSS custom properties from design tokens
+- [ ] T635 [FE] Update atomic components to use Tailwind utilities instead of inline styles where appropriate
+
+### Templates & Pages Refactoring
+
+- [ ] T636 [FE] Create `packages/frontend/src/components/templates/IndexLayout.tsx`
+- [ ] T637 [FE] Refactor `packages/frontend/src/components/IndexPage.tsx` to use atomic components and templates
+- [ ] T638 [P] [FE] Create `packages/frontend/src/components/templates/DashboardLayout.tsx`
+- [ ] T639 [FE] Refactor `packages/frontend/src/components/Dashboard.tsx` into DashboardPage, AgentsPage, ProofsPage using atomic components
+- [ ] T640 [P] [FE] Create `packages/frontend/src/components/templates/ForoLayout.tsx`
+- [ ] T641 [FE] Refactor `packages/frontend/src/components/ForoPage.tsx` into ForoPage, TestsTab, ProofTab, RewardsTab using atomic components
+- [ ] T642 [FE] Refactor `packages/frontend/src/components/VerificationPanel.tsx` to use atomic components
+
+### Documentation & Testing
+
+- [X] T643 [P] [FE] Create `packages/frontend/src/components/README.md` explaining atomic design structure
+- [X] T644 [P] [FE] Create `packages/frontend/src/lib/theme/README.md` with design system documentation
+- [ ] T645 [P] [FE] Add unit tests for custom hooks in `packages/frontend/src/hooks/__tests__/`
+- [ ] T646 [P] [FE] Update E2E tests in `packages/frontend/tests/e2e/` to work with new component structure
+- [ ] T647 [P] [FE] Update package.json scripts to include component testing commands
+
+### Cleanup & Optimization
+
+- [ ] T648 [FE] Add barrel exports for all component folders (atoms, molecules, organisms, templates, pages)
+- [ ] T649 [FE] Update all import statements across the app to use new atomic components
+- [ ] T650 [FE] Remove old monolithic component files after migration is complete and tested
+- [ ] T651 [FE] Run bundle analyzer and optimize imports for tree-shaking
+- [ ] T652 [FE] Run ESLint and fix all warnings in new components
+- [ ] T653 [FE] Verify all components are accessible (ARIA labels, semantic HTML, keyboard navigation)
+
+---
+
 ## Task Count Summary
 
-- **Total Tasks**: 109 (updated: added T043b, T045b, T053b for test failure handling; BugBounty removed from MVP)
+- **Total Tasks**: 163 (updated: added Phase 10 Frontend Atomic Refactoring with 54 tasks)
 - **Phase 1 (Setup)**: 9 tasks
 - **Phase 2 (Foundational)**: 11 tasks (BLOCKS all stories)
 - **Phase 3 (US1)**: 9 tasks
@@ -430,8 +525,11 @@ With 3 developers:
 - **Phase 5 (US3)**: 8 tasks
 - **Phase 6 (US4)**: 11 tasks
 - **Phase 7 (US5)**: 16 tasks
-- **Phase 6 (Polish)**: 14 tasks
+- **Phase 8 (Polish)**: 14 tasks
+- **Phase 10 (Frontend Refactoring)**: 54 tasks (33 completed, 21 remaining)
 
 **MVP Scope** (US1 + US2): 38 US tasks + 9 setup + 11 foundational + 7 polish = **65 tasks**
 
-**Parallel Opportunities Identified**: 38+ tasks marked with [P] can run in parallel, reducing wall-clock time by ~40% with adequate team size
+**Frontend Refactoring Progress**: Foundation, Atoms, Molecules, Organisms, and Hooks complete (33/54 tasks). Remaining: Templates/Pages refactoring, Testing, and Cleanup.
+
+**Parallel Opportunities Identified**: 50+ tasks marked with [P] can run in parallel, reducing wall-clock time by ~40% with adequate team size
