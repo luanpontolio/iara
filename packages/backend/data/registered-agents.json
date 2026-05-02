@@ -1,0 +1,62 @@
+[
+  {
+    "name": "agent-uni",
+    "foroId": "8",
+    "erc8004AgentId": "7",
+    "erc8004Address": "0xfD24AFc2822d937b40FBdF37D210Ea6E16EE3e1A"
+  },
+  {
+    "name": "agent-makerdao",
+    "foroId": "9",
+    "erc8004AgentId": "8",
+    "erc8004Address": "0xfD24AFc2822d937b40FBdF37D210Ea6E16EE3e1A"
+  },
+  {
+    "name": "agent-aave",
+    "foroId": "10",
+    "erc8004AgentId": "9",
+    "erc8004Address": "0xfD24AFc2822d937b40FBdF37D210Ea6E16EE3e1A"
+  },
+  {
+    "name": "agent-compound",
+    "foroId": "11",
+    "erc8004AgentId": "10",
+    "erc8004Address": "0xfD24AFc2822d937b40FBdF37D210Ea6E16EE3e1A"
+  },
+  {
+    "name": "agent-curve",
+    "foroId": "12",
+    "erc8004AgentId": "11",
+    "erc8004Address": "0xfD24AFc2822d937b40FBdF37D210Ea6E16EE3e1A"
+  },
+  {
+    "name": "agent-lido",
+    "foroId": "13",
+    "erc8004AgentId": "12",
+    "erc8004Address": "0xfD24AFc2822d937b40FBdF37D210Ea6E16EE3e1A"
+  },
+  {
+    "name": "agent-yearn",
+    "foroId": "14",
+    "erc8004AgentId": "13",
+    "erc8004Address": "0xfD24AFc2822d937b40FBdF37D210Ea6E16EE3e1A"
+  },
+  {
+    "name": "agent-balancer",
+    "foroId": "15",
+    "erc8004AgentId": "14",
+    "erc8004Address": "0xfD24AFc2822d937b40FBdF37D210Ea6E16EE3e1A"
+  },
+  {
+    "name": "agent-frax",
+    "foroId": "16",
+    "erc8004AgentId": "15",
+    "erc8004Address": "0xfD24AFc2822d937b40FBdF37D210Ea6E16EE3e1A"
+  },
+  {
+    "name": "agent-convex",
+    "foroId": "17",
+    "erc8004AgentId": "16",
+    "erc8004Address": "0xfD24AFc2822d937b40FBdF37D210Ea6E16EE3e1A"
+  }
+]
