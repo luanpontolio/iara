@@ -5,19 +5,21 @@ import { useState } from 'react';
 import { Button } from '@/components/atoms';
 import { AgentCard } from '@/components/organisms';
 import { Header } from '@/components/organisms';
+import { useAgentList } from '@/hooks';
 import { pluralize } from '@/lib';
 import { ColumnDivider } from './ColumnDivider';
 import { ColumnCount, SubHeader } from './columnHelpers';
 import { DonePanel } from './DonePanel';
 import { QueuePanel } from './QueuePanel';
-import { HOME_FAILED, HOME_LIVE, HOME_VERIFIED, HOME_WAITING } from './data';
 
 export function HomePage() {
   const router = useRouter();
   const [queueOpen, setQueueOpen] = useState(false);
   const [doneOpen, setDoneOpen] = useState(false);
 
-  const settledCount = HOME_VERIFIED.length + HOME_FAILED.length;
+  const { waiting, live, verified, failed, isLoading } = useAgentList();
+
+  const settledCount = verified.length + failed.length;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-bg-primary">
@@ -43,7 +45,7 @@ export function HomePage() {
           <div className="flex flex-col overflow-hidden">
             <div className="flex h-14 flex-shrink-0 items-center justify-center">
               {!queueOpen && (
-                <ColumnCount count={HOME_WAITING.length} label={`${pluralize(HOME_WAITING.length, 'agent')} queued`} />
+                <ColumnCount count={waiting.length} label={`${pluralize(waiting.length, 'agent')} queued`} />
               )}
             </div>
             <div className="scrollbar-thin flex-1 overflow-y-auto">
@@ -56,7 +58,8 @@ export function HomePage() {
                 />
               ) : (
                 <div className="flex flex-col gap-2 px-5 pb-6">
-                  {HOME_WAITING.map(a => (
+                  {isLoading && <span className="px-1 text-xs text-text-tertiary">Loading…</span>}
+                  {waiting.map(a => (
                     <AgentCard
                       key={a.id}
                       agent={a}
@@ -81,10 +84,11 @@ export function HomePage() {
           {/* Col 2: Live */}
           <div className="flex flex-col overflow-hidden">
             <div className="flex h-14 flex-shrink-0 items-center justify-center">
-              <ColumnCount count={HOME_LIVE.length} label={`${pluralize(HOME_LIVE.length, 'agent')} running`} />
+              <ColumnCount count={live.length} label={`${pluralize(live.length, 'agent')} running`} />
             </div>
             <div className="scrollbar-thin flex flex-1 flex-col gap-2 overflow-y-auto px-5 pb-6">
-              {HOME_LIVE.map(a => (
+              {isLoading && <span className="px-1 text-xs text-text-tertiary">Loading…</span>}
+              {live.map(a => (
                 <AgentCard key={a.id} agent={a} variant="live" onClick={() => router.push(`/${a.id}`)} />
               ))}
             </div>
@@ -111,8 +115,9 @@ export function HomePage() {
                 <DonePanel onClose={() => setDoneOpen(false)} />
               ) : (
                 <div className="px-5 pb-6">
+                  {isLoading && <span className="px-1 text-xs text-text-tertiary">Loading…</span>}
                   <div className="flex flex-col gap-2">
-                    {HOME_VERIFIED.map(a => (
+                    {verified.map(a => (
                       <AgentCard
                         key={a.id}
                         agent={a}
@@ -121,11 +126,11 @@ export function HomePage() {
                       />
                     ))}
                   </div>
-                  {HOME_FAILED.length > 0 && (
+                  {failed.length > 0 && (
                     <>
-                      <SubHeader count={HOME_FAILED.length} label={`failed ${pluralize(HOME_FAILED.length, 'agent')}`} />
+                      <SubHeader count={failed.length} label={`failed ${pluralize(failed.length, 'agent')}`} />
                       <div className="flex flex-col gap-2">
-                        {HOME_FAILED.map(a => (
+                        {failed.map(a => (
                           <AgentCard
                             key={a.id}
                             agent={a}

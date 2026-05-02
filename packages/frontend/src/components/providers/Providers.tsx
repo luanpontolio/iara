@@ -7,7 +7,7 @@ import { wagmiConfig } from '@/lib/wagmi';
 
 interface ProvidersProps {
   children: React.ReactNode;
-  initialState?: State;
+  initialState?: State | undefined;
 }
 
 export function Providers({ children, initialState }: ProvidersProps) {
