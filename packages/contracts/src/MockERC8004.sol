@@ -37,8 +37,8 @@ contract MockERC8004 is ERC721URIStorage, EIP712, IERC8004 {
     
     function register() external returns (uint256 agentId) {
         agentId = _nextAgentId++;
-        _safeMint(msg.sender, agentId);
         _agentWallets[agentId] = msg.sender;
+        _safeMint(msg.sender, agentId);
         
         emit Registered(agentId, "", msg.sender);
         emit MetadataSet(agentId, AGENT_WALLET_KEY, AGENT_WALLET_KEY, abi.encode(msg.sender));
@@ -46,10 +46,10 @@ contract MockERC8004 is ERC721URIStorage, EIP712, IERC8004 {
     
     function register(string calldata agentURI) external returns (uint256 agentId) {
         agentId = _nextAgentId++;
+        _agentWallets[agentId] = msg.sender;
         _safeMint(msg.sender, agentId);
         _setTokenURI(agentId, agentURI);
-        _agentWallets[agentId] = msg.sender;
-        
+
         emit Registered(agentId, agentURI, msg.sender);
         emit MetadataSet(agentId, AGENT_WALLET_KEY, AGENT_WALLET_KEY, abi.encode(msg.sender));
     }

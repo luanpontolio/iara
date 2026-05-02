@@ -8,6 +8,12 @@ optimizer = true
 optimizer_runs = 200
 via_ir = false
 
+# File system permissions for deployment scripts
+fs_permissions = [
+    { access = "read-write", path = "./deployments.json" },
+    { access = "read", path = "./out" }
+]
+
 # Test configuration
 test = "test"
 gas_reports = ["*"]
@@ -42,4 +48,4 @@ number_underscore = "thousands"
 
 [rpc_endpoints]
 mainnet = "${MAINNET_RPC_URL}"
-0g_testnet = "${0G_CHAIN_RPC_URL}"
+zg_testnet = "${ZG_CHAIN_RPC_URL}"

@@ -18,7 +18,8 @@
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "clean": "rm -rf dist",
-    "generate-types": "typechain --target ethers-v6 --out-dir src/contracts '../contracts/out/**/*.json'"
+    "generate-types": "tsx scripts/generate-types.ts",
+    "generate-typechain": "typechain --target ethers-v6 --out-dir src/contracts '../contracts/out/**/*.json'"
   },
   "dependencies": {
     "ethers": "^6.11.0"

@@ -96,21 +96,22 @@ As multiple tests are completed for an agent, their status evolves based on the 
 
 ---
 
-### User Story 5 - Using Verified Agents via x402 Payment Protocol (Priority: P4)
+### User Story 5 - Using Agents via x402 Payment Protocol (Priority: P4)
 
-Users who want to use a VERIFIED or ELITE agent can call the agent's endpoint directly. The agent responds with HTTP 402 Payment Required including x402 payment instructions (scheme, token, amount, facilitator). The user constructs an EIP-3009 `TransferWithAuthorization` signature for the exact amount and submits it with the original request. The agent (or its proxy) verifies payment via the x402 facilitator's /verify and /settle endpoints, executes the service, and returns the result. Each successful execution increments the agent's usage counter on-chain (or off-chain initially in MVP). Users can audit their payment history and verify they received service for each payment.
+Users who want to use any agent can call the agent's endpoint directly. The agent responds with HTTP 402 Payment Required including x402 payment instructions (scheme, token, amount, facilitator). The user constructs an EIP-3009 `TransferWithAuthorization` signature for the exact amount and submits it with the original request. The agent (or its proxy) verifies payment via the x402 facilitator's /verify and /settle endpoints, executes the service, and returns the result. Each successful execution increments the agent's usage counter on-chain (or off-chain initially in MVP). Users can audit their payment history and verify they received service for each payment. Frontend displays verification status prominently to help users make informed decisions, but protocol does not restrict payment by agent status.
 
-**Why this priority**: This is the monetization and usage layer post-verification. P4 because it depends on agents having VERIFIED/ELITE status first (P1-P3), but is essential for the full ecosystem value loop.
+**Why this priority**: This is the monetization and usage layer. P4 because it depends on reputation system (P2) being visible to users, but agents can monetize at any status. Essential for the full ecosystem value loop.
 
-**Independent Test**: Can be fully tested by calling a VERIFIED agent endpoint, receiving 402 response, constructing x402 payment proof, resubmitting with payment, receiving service result, and verifying payment was settled on-chain.
+**Independent Test**: Can be fully tested by calling any agent endpoint (PENDING, PROBATION, VERIFIED, ELITE, or FAILED), receiving 402 response, constructing x402 payment proof, resubmitting with payment, receiving service result, and verifying payment was settled on-chain. User assumes risk for unverified agents based on displayed status badges.
 
 **Acceptance Scenarios**:
 
-1. **Given** a VERIFIED agent, **When** user calls endpoint without payment header, **Then** receives 402 response with x402 payment details (token, amount, facilitator URL)
+1. **Given** any agent (regardless of status), **When** user calls endpoint without payment header, **Then** receives 402 response with x402 payment details (token, amount, facilitator URL)
 2. **Given** user constructs valid EIP-3009 signature for requested amount, **When** submitting request with x402 payment header, **Then** agent verifies payment via facilitator and processes request
 3. **Given** user provides insufficient payment amount, **When** submitting request, **Then** agent rejects with 402 error indicating required amount
-4. **Given** agent successfully processes paid request, **When** execution completes, **Then** usage counter for that agent increments and is queryable on-chain or via API
+4. **Given** agent successfully processes paid request, **When** execution completes, **Then** usage counter for that agent increments and is queryable on-chain or via API (regardless of agent status)
 5. **Given** user disputes they paid but didn't receive service, **When** auditing on-chain, **Then** payment transaction and timestamp are verifiable via x402 facilitator logs
+6. **Given** user views unverified (PENDING/PROBATION) agent in frontend, **When** hovering over "PAY & USE" button, **Then** sees warning tooltip: "⚠️ This agent is not verified. Payments are at your own risk. Consider requesting a test first."
 
 ---
 
@@ -145,6 +146,9 @@ Users who want to use a VERIFIED or ELITE agent can call the agent's endpoint di
 
 - What if an agent's SLA constraints (maxLatencyMs, maxCostUSD) are unrealistic?
   - If actual latency or cost exceeds SLA during testing, the latency score component will be 0 or very low, resulting in a low overall score. This naturally filters out agents with unrealistic SLAs.
+
+- What if a user pays an unverified (PENDING/PROBATION) agent via x402?
+  - Payment proceeds normally via x402 facilitator. Users are responsible for assessing risk based on displayed verification status. Frontend provides clear warnings (status badges, tooltip explanations) but does not prevent usage. This aligns with permissionless design - verification is advisory (helps users assess quality), not authoritative (doesn't gate monetization). The x402 facilitator already protects users by verifying payment before service delivery.
 
 ## Requirements *(mandatory)*
 
@@ -244,11 +248,12 @@ Users who want to use a VERIFIED or ELITE agent can call the agent's endpoint di
 
 #### Agent Usage via x402
 
-- **FR-044**: VERIFIED or ELITE agents MAY integrate x402 payment protocol at their endpoints to monetize usage
-- **FR-045**: Agent endpoints using x402 MUST respond with HTTP 402 when called without valid payment header
+- **FR-044**: Agents in any status (PENDING, PROBATION, VERIFIED, ELITE, FAILED) MAY integrate x402 payment protocol at their endpoints to monetize usage
+- **FR-045**: Agent endpoints using x402 MUST respond with HTTP 402 when called without valid payment header, regardless of agent verification status
 - **FR-046**: x402 response MUST include payment details: scheme (exact), token address, amount, facilitator URL
 - **FR-047**: Agents or their proxies MUST verify payment via x402 facilitator /verify and /settle endpoints before processing paid requests
-- **FR-048**: Each successful paid execution SHOULD increment agent's usage counter (on-chain in future, off-chain in MVP)
+- **FR-048**: Each successful paid execution SHOULD increment agent's usage counter (on-chain in future, off-chain in MVP) regardless of agent verification status
+- **FR-049**: Frontend MUST display agent verification status prominently (status badge with color coding: PENDING/PROBATION with warning, VERIFIED with checkmark, ELITE with star, FAILED with error) to help users make informed payment decisions, but protocol does not enforce status-based payment restrictions
 
 ### Key Entities
 
