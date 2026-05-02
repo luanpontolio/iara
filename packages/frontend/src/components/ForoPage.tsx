@@ -378,10 +378,10 @@ export function ForoPage() {
       </header>
 
       {/* ── Fixed: escrow + gauge + name + info + tab nav ──────────────── */}
-      <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '28px 24px 0' }}>
+      <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '36px 24px 0' }}>
 
         {/* Escrow */}
-        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <div style={{ ...MONO, fontSize: 32, letterSpacing: '-0.02em', color: '#F4F4F8', lineHeight: 1 }}>
             {agent.testFee ?? '—'}
           </div>
@@ -394,18 +394,18 @@ export function ForoPage() {
         <Gauge {...gaugeProps} svgWidth={200} svgHeight={120} />
 
         {/* Agent name */}
-        <div style={{ ...SANS, fontSize: 16, fontWeight: 500, color: '#F4F4F8', marginTop: 4, marginBottom: 20 }}>
+        <div style={{ ...SANS, fontSize: 16, fontWeight: 500, color: '#F4F4F8', marginTop: 14, marginBottom: 32 }}>
           {agent.name}
         </div>
 
         {/* Info grid */}
-        <div style={{ width: '100%', maxWidth: 540, marginBottom: 24 }}>
+        <div style={{ width: '100%', maxWidth: 540, marginBottom: 40 }}>
           <InfoGrid agent={agent} />
         </div>
 
         {/* Tab nav — bottom border is the scroll breakpoint */}
         <div style={{ width: '100%', maxWidth: 540 }}>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 36, paddingBottom: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 36, paddingBottom: 20 }}>
             {tabs.map(t => (
               <button
                 key={t.id}
