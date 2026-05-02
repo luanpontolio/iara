@@ -1,0 +1,142 @@
+/**
+ * Global Styles
+ * 
+ * CSS custom properties from design tokens and global styles.
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /*
+     * Font stacks — Geist is loaded in layout.tsx via `geist/font` (sets
+     * --font-geist-sans / --font-geist-mono on <html>). EB Garamond sets
+     * --font-serif. These aliases power Tailwind `font-sans` / `font-mono`
+     * and design tokens.
+     */
+    --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+    --font-mono: var(--font-geist-mono), ui-monospace, Menlo, Consolas, monospace;
+
+    /* Color tokens as CSS variables for dynamic theming */
+    --color-bg-primary: #0a0a0b;
+    --color-bg-secondary: #111113;
+    --color-bg-tertiary: #161618;
+    --color-bg-elevated: #1a1a1e;
+    
+    --color-border-subtle: #1e1e24;
+    --color-border-default: #2a2a32;
+    --color-border-strong: #3d3d47;
+    
+    --color-text-primary: #f4f4f8;
+    --color-text-secondary: #c4c4ce;
+    --color-text-tertiary: #9393a0;
+    --color-text-quaternary: #72727e;
+    --color-text-muted: #52525e;
+    --color-text-disabled: #3d3d47;
+    
+    --color-accent: #b8ff4f;
+    --color-accent-hover: #c9ff6e;
+    
+    --color-success: #4ade80;
+    --color-warning: #e8a935;
+    --color-error: #f26b6b;
+    --color-info: #5c9ee8;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Screen reader only utility */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* Focus visible styles for accessibility */
+  *:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /* Remove default button styles */
+  button {
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+  }
+}
+
+@layer utilities {
+  /* Scrollbar styling */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-default) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: var(--color-border-default);
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: var(--color-border-strong);
+  }
+
+  /* Animation utilities */
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .animate-spin {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}
