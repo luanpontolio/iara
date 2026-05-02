@@ -171,6 +171,11 @@ interface IForoRegistry {
         uint256 timestamp
     );
     
+    event Withdrawal(
+        address indexed account,
+        uint256 amount
+    );
+    
     function registerAgent(
         address erc8004Address,
         uint256 erc8004AgentId
@@ -219,6 +224,10 @@ interface IForoRegistry {
     function getKeeperWeight(address keeper) external view returns (uint256 weight);
     
     function getKeeper(address keeper) external view returns (Keeper memory);
+    
+    function withdraw() external;
+    
+    function getPendingWithdrawal(address account) external view returns (uint256 amount);
     
     function getAgent(uint256 foroId) external view returns (Agent memory agent);
     
