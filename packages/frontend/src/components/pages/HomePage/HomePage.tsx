@@ -29,7 +29,7 @@ export function HomePage() {
             <Button variant="ghost" size="md">
               Register as Keeper
             </Button>
-            <Button variant="primary" size="md">
+            <Button variant="primary" size="md" onClick={() => router.push('/agent/new')}>
               Verify my agent
             </Button>
           </>
