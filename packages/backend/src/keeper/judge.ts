@@ -1,7 +1,8 @@
 /**
  * LLM Judge for Agent Output Evaluation
- * 
- * Uses 0G Compute TEE to evaluate agent outputs against criteria
+ *
+ * Uses 0G Compute API to evaluate agent outputs against criteria.
+ * TEE verification is handled automatically by the Router (verify_tee feature).
  */
 
 import { ZGComputeBroker, LLMResponse, TEEProof } from '../utils/0g-compute.js';
@@ -26,7 +27,7 @@ export interface JudgeResult {
 
 /**
  * Build LLM prompt for judging agent output
- * 
+ *
  * @param agentOutput The agent's output
  * @param criteria Evaluation criteria from Agent Contract
  * @returns Formatted prompt for LLM judge
@@ -102,7 +103,7 @@ export function parseCriterionScores(
 }
 
 /**
- * Evaluate agent output using LLM judge with TEE proof
+ * Evaluate agent output using LLM judge with Router TEE verification
  * 
  * @param broker 0G Compute broker
  * @param executionResult The agent's execution result
@@ -128,8 +129,8 @@ export async function judgeAgentOutput(
       })),
       teeProof: {
         chatId: '',
-        signature: '',
-        verified: false,
+        provider: '',
+        verified: null,
       },
     };
   }
@@ -138,8 +139,8 @@ export async function judgeAgentOutput(
   
   // Build prompt
   const prompt = buildJudgePrompt(executionResult.output, criteria);
-  
-  // Call LLM via 0G Compute TEE
+  logger.info({ prompt }, 'Prompt built');
+  // Call LLM via 0G Compute API with TEE verification
   const llmResponse: LLMResponse = await broker.callLLM(prompt);
   
   // Parse scores
@@ -150,19 +151,15 @@ export async function judgeAgentOutput(
     ? criterionScores.reduce((sum, s) => sum + s.score, 0) / criterionScores.length
     : 0;
   
-  // Verify TEE proof off-chain (optional pre-check)
-  if (llmResponse.proof.chatId) {
-    const verified = await broker.verifyProof(llmResponse.proof.chatId);
-    if (!verified) {
-      logger.warn({ chatId: llmResponse.proof.chatId }, 'TEE proof verification failed');
-    }
-  }
+  // TEE verification is done automatically by the Router (verify_tee: true)
+  // The verified status is in llmResponse.proof.verified
   
   logger.info(
     {
       testCaseId: executionResult.testCaseId,
       qualityScore: Math.round(qualityScore),
       chatId: llmResponse.proof.chatId,
+      provider: llmResponse.proof.provider,
       teeVerified: llmResponse.proof.verified,
     },
     'Agent output judged'
