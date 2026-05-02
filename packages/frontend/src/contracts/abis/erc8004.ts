@@ -1,5 +1,15 @@
 export const ERC8004_ABI = [
   {
+    name: 'getMetadata',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'agentId', type: 'uint256' },
+      { name: 'key', type: 'string' },
+    ],
+    outputs: [{ name: '', type: 'bytes' }],
+  },
+  {
     name: 'register',
     type: 'function',
     stateMutability: 'nonpayable',
