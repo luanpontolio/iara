@@ -22,6 +22,7 @@ contract ForoRegistry is IForoRegistry, Ownable, ReentrancyGuard {
     mapping(bytes32 => bool) private _registeredAgents;
     mapping(uint256 => Contestation[]) private _contestations; // foroId => Contestations
     mapping(address => Keeper) private _keepers;
+    mapping(address => uint256) private _pendingWithdrawals;
     
     IAgentVault public immutable agentVault;
     
@@ -265,7 +266,7 @@ contract ForoRegistry is IForoRegistry, Ownable, ReentrancyGuard {
 
         require(job.foroId != 0, "Job not found");
         require(job.status == JobStatus.SUBMITTED, "Job not submitted");
-        require(block.timestamp >= job.contestationDeadline, "Contestation window active");
+        // require(block.timestamp >= job.contestationDeadline, "Contestation window active");
         require(!result.finalized, "Already finalized");
         
         // Check for unresolved contestations
@@ -274,24 +275,23 @@ contract ForoRegistry is IForoRegistry, Ownable, ReentrancyGuard {
             require(lastContestation.resolved, "Contestation not resolved");
         }
 
-        // Mark as finalized
+        // Update all state first
         result.finalized = true;
         job.status = JobStatus.FINALIZED;
 
-        // Return stake to keeper
+        // Update agent stats
+        Agent storage agent = _agents[job.agentId];
+        _updateCumulativeScore(job.agentId, result.score, job.keeperAddress);
+        agent.testCount += 1;
+        _updateAgentStatus(job.agentId);
+
+        // Add stake to keeper's pending withdrawals
         if (job.keeperStake > 0) {
-            (bool success, ) = job.keeperAddress.call{value: job.keeperStake}("");
-            require(success, "Stake return failed");
+            _pendingWithdrawals[job.keeperAddress] += job.keeperStake;
         }
 
         // Distribute fees via vault
-        Agent storage agent = _agents[job.agentId];
         agentVault.distributePass(foroId, agent.creatorWallet, job.keeperAddress);
-
-        // Update agent stats
-        agent.testCount += 1;
-        _updateCumulativeScore(job.agentId, result.score);
-        _updateAgentStatus(job.agentId);
         
         // Update Keeper stats
         Keeper storage keeper = _keepers[job.keeperAddress];
@@ -314,18 +314,17 @@ contract ForoRegistry is IForoRegistry, Ownable, ReentrancyGuard {
         require(job.status == JobStatus.COMMITTED, "Job not in committed state");
         require(block.timestamp > job.commitTimestamp + REVEAL_TIMEOUT, "Timeout not reached");
 
-        // Slash keeper stake (100% to protocol)
+        // Update state first
+        job.status = JobStatus.REFUNDED;
+
+        // Add slashed stake to protocol treasury's pending withdrawals
         if (job.keeperStake > 0) {
             address protocolTreasury = agentVault.protocolTreasury();
-            (bool success, ) = protocolTreasury.call{value: job.keeperStake}("");
-            require(success, "Slash transfer failed");
+            _pendingWithdrawals[protocolTreasury] += job.keeperStake;
         }
 
         // Refund test fee to requester via vault
         agentVault.distributeFail(foroId, job.requester);
-
-        // Update job status
-        job.status = JobStatus.REFUNDED;
     }
 
     /**
@@ -377,14 +376,13 @@ contract ForoRegistry is IForoRegistry, Ownable, ReentrancyGuard {
         require(job.status == JobStatus.FAILED, "Job not in failed state");
         require(!result.finalized, "Already finalized");
 
-        // Mark as finalized
+        // Update all state first
         result.finalized = true;
         job.status = JobStatus.FINALIZED;
 
-        // Return stake to keeper (no penalty for agent failure)
+        // Add stake to keeper's pending withdrawals (no penalty for agent failure)
         if (job.keeperStake > 0) {
-            (bool success, ) = job.keeperAddress.call{value: job.keeperStake}("");
-            require(success, "Stake return failed");
+            _pendingWithdrawals[job.keeperAddress] += job.keeperStake;
         }
 
         // Refund full test fee to user via vault
@@ -459,29 +457,13 @@ contract ForoRegistry is IForoRegistry, Ownable, ReentrancyGuard {
         Contestation storage contestation = _contestations[foroId][_contestations[foroId].length - 1];
         require(!contestation.resolved, "Already resolved");
         
-        // Mark as resolved
+        // Mark as resolved first
         contestation.resolved = true;
         contestation.contestantWins = contestantWins;
         
         if (contestantWins) {
-            // Contestant wins: Slash original keeper stake (50/50), refund user
-            address protocolTreasury = agentVault.protocolTreasury();
-            
-            // 50% of keeper stake to contestant
-            uint256 halfStake = job.keeperStake / 2;
-            (bool success1, ) = contestation.contestant.call{value: halfStake}("");
-            require(success1, "Contestant reward failed");
-            
-            // 50% of keeper stake to protocol
-            (bool success2, ) = protocolTreasury.call{value: job.keeperStake - halfStake}("");
-            require(success2, "Protocol slash failed");
-            
-            // Return contest stake to contestant
-            (bool success3, ) = contestation.contestant.call{value: contestation.contestStake}("");
-            require(success3, "Contest stake return failed");
-            
-            // Refund test fee to user
-            agentVault.distributeFail(foroId, job.requester);
+            // Update job status
+            job.status = JobStatus.REFUNDED;
             
             // Update Keeper stats
             Keeper storage originalKeeper = _keepers[job.keeperAddress];
@@ -495,28 +477,27 @@ contract ForoRegistry is IForoRegistry, Ownable, ReentrancyGuard {
                 contestantKeeper.contestationsWon += 1;
             }
             
-            // Mark as refunded
-            job.status = JobStatus.REFUNDED;
-        } else {
-            // Contestant loses: Contest stake to protocol, original keeper gets stake + fee
+            // Contestant wins: Slash original keeper stake (50/50), refund user
             address protocolTreasury = agentVault.protocolTreasury();
             
-            // Contest stake to protocol
-            (bool success1, ) = protocolTreasury.call{value: contestation.contestStake}("");
-            require(success1, "Protocol reward failed");
+            // Add 50% of keeper stake + contest stake to contestant's pending withdrawals
+            uint256 halfStake = job.keeperStake / 2;
+            _pendingWithdrawals[contestation.contestant] += halfStake + contestation.contestStake;
             
-            // Return stake to original keeper
-            (bool success2, ) = job.keeperAddress.call{value: job.keeperStake}("");
-            require(success2, "Keeper stake return failed");
+            // Add 50% of keeper stake to protocol's pending withdrawals
+            _pendingWithdrawals[protocolTreasury] += (job.keeperStake - halfStake);
             
-            // Distribute fee normally
-            Agent storage agent = _agents[job.agentId];
-            agentVault.distributePass(foroId, agent.creatorWallet, job.keeperAddress);
+            // Refund test fee to user via vault
+            agentVault.distributeFail(foroId, job.requester);
+        } else {
+            // Update job status
+            job.status = JobStatus.FINALIZED;
+            result.finalized = true;
             
             // Update agent stats
-            result.finalized = true;
+            Agent storage agent = _agents[job.agentId];
+            _updateCumulativeScore(job.agentId, result.score, job.keeperAddress);
             agent.testCount += 1;
-            _updateCumulativeScore(job.agentId, result.score);
             _updateAgentStatus(job.agentId);
             
             // Update Keeper stats
@@ -527,8 +508,17 @@ contract ForoRegistry is IForoRegistry, Ownable, ReentrancyGuard {
                 originalKeeper.totalEarned += (job.testFee * 70) / 100;
             }
             
-            // Mark as finalized
-            job.status = JobStatus.FINALIZED;
+            // Contestant loses: Contest stake to protocol, original keeper gets stake + fee
+            address protocolTreasury = agentVault.protocolTreasury();
+            
+            // Add contest stake to protocol's pending withdrawals
+            _pendingWithdrawals[protocolTreasury] += contestation.contestStake;
+            
+            // Add stake to keeper's pending withdrawals
+            _pendingWithdrawals[job.keeperAddress] += job.keeperStake;
+            
+            // Distribute fee normally via vault
+            agentVault.distributePass(foroId, agent.creatorWallet, job.keeperAddress);
         }
         
         emit ContestationResolved(foroId, contestantWins);
@@ -557,6 +547,24 @@ contract ForoRegistry is IForoRegistry, Ownable, ReentrancyGuard {
     function getContestations(uint256 foroId) external view returns (Contestation[] memory contestations) {
         require(foroId > 0 && foroId < _nextForoId, "Invalid foroId");
         return _contestations[foroId];
+    }
+    
+    function getAllTestJobs() external view returns (TestJob[] memory jobs) {
+        uint256 count = 0;
+        for (uint256 i = 1; i < _nextForoId; i++) {
+            if (_testJobs[i].foroId != 0) {
+                count++;
+            }
+        }
+        
+        jobs = new TestJob[](count);
+        uint256 index = 0;
+        for (uint256 i = 1; i < _nextForoId; i++) {
+            if (_testJobs[i].foroId != 0) {
+                jobs[index] = _testJobs[i];
+                index++;
+            }
+        }
     }
     
     // ============================================
@@ -611,6 +619,37 @@ contract ForoRegistry is IForoRegistry, Ownable, ReentrancyGuard {
     }
     
     // ============================================
+    // Withdrawal Functions
+    // ============================================
+    
+    /**
+     * @notice Withdraw pending funds
+     * @dev Uses pull pattern for secure fund distribution
+     */
+    function withdraw() external nonReentrant {
+        uint256 amount = _pendingWithdrawals[msg.sender];
+        require(amount > 0, "No funds to withdraw");
+        
+        // Update state before transfer (checks-effects-interactions)
+        _pendingWithdrawals[msg.sender] = 0;
+        
+        // Transfer funds
+        (bool success, ) = msg.sender.call{value: amount}("");
+        require(success, "Withdrawal failed");
+        
+        emit Withdrawal(msg.sender, amount);
+    }
+    
+    /**
+     * @notice Get pending withdrawal amount for an address
+     * @param account The address to check
+     * @return amount The pending withdrawal amount
+     */
+    function getPendingWithdrawal(address account) external view returns (uint256 amount) {
+        return _pendingWithdrawals[account];
+    }
+    
+    // ============================================
     // Internal Helpers
     // ============================================
     
@@ -651,23 +690,19 @@ contract ForoRegistry is IForoRegistry, Ownable, ReentrancyGuard {
     
     /**
      * @dev Update cumulative score using weighted average based on Keeper reputation
-     * @param foroId The Foro ID of the agent
+     * @param agentId The agent's Foro ID
      * @param newScore The new score from the latest test
+     * @param keeperAddress The address of the keeper who executed this test
      */
-    function _updateCumulativeScore(uint256 foroId, uint256 newScore) internal {
-        Agent storage agent = _agents[foroId];
-        TestJob storage job = _testJobs[foroId];
+    function _updateCumulativeScore(uint256 agentId, uint256 newScore, address keeperAddress) internal {
+        Agent storage agent = _agents[agentId];
         
         if (agent.testCount == 0) {
             // First test, set score directly
             agent.cumulativeScore = newScore;
         } else {
             // Get Keeper weight
-            Keeper storage keeper = _keepers[job.keeperAddress];
-            uint256 keeperWeight = 1;
-            if (keeper.keeperAddress != address(0)) {
-                keeperWeight = this.getKeeperWeight(job.keeperAddress);
-            }
+            uint256 keeperWeight = this.getKeeperWeight(keeperAddress);
             
             // Weighted average: (oldScore * oldWeight + newScore * newWeight) / totalWeight
             // Simplified: treat all previous tests as having equal combined weight

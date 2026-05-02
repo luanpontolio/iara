@@ -46,13 +46,13 @@ export async function executeTestCase(
   timeoutMs: number = 10000
 ): Promise<ExecutionResult> {
   const startTime = Date.now();
-  
+
   try {
     logger.info({ testCaseId: testCase.id, endpoint: agentEndpoint }, 'Executing test case');
-    
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
-    
+
     const response = await fetch(agentEndpoint, {
       method: 'POST',
       headers: {
@@ -61,17 +61,17 @@ export async function executeTestCase(
       body: JSON.stringify(testCase.input),
       signal: controller.signal,
     });
-    
+
     clearTimeout(timeout);
-    
+
     const latencyMs = Date.now() - startTime;
-    
+
     if (!response.ok) {
       logger.warn(
         { testCaseId: testCase.id, status: response.status },
         'Agent endpoint returned error'
       );
-      
+
       return {
         testCaseId: testCase.id,
         output: null,
@@ -80,27 +80,27 @@ export async function executeTestCase(
         error: `HTTP ${response.status}: ${response.statusText}`,
       };
     }
-    
+
     const output = await response.json();
-    
+
     logger.info(
       { testCaseId: testCase.id, latencyMs },
       'Test case executed successfully'
     );
-    
+
     return {
       testCaseId: testCase.id,
-      output,
+      output: output as Record<string, unknown> | null,
       latencyMs,
       success: true,
     };
   } catch (error) {
     const latencyMs = Date.now() - startTime;
-    
+
     if (error instanceof Error) {
       if (error.name === 'AbortError') {
         logger.error({ testCaseId: testCase.id, timeoutMs }, 'Test case timed out');
-        
+
         return {
           testCaseId: testCase.id,
           output: null,
@@ -109,12 +109,10 @@ export async function executeTestCase(
           error: `Timeout after ${timeoutMs}ms`,
         };
       }
-      
       logger.error(
         { testCaseId: testCase.id, error: error.message },
         'Test case execution failed'
       );
-      
       return {
         testCaseId: testCase.id,
         output: null,
@@ -123,7 +121,7 @@ export async function executeTestCase(
         error: error.message,
       };
     }
-    
+
     return {
       testCaseId: testCase.id,
       output: null,
@@ -136,7 +134,7 @@ export async function executeTestCase(
 
 /**
  * Execute all test cases for an agent
- * 
+ *
  * @param agentEndpoint The agent HTTP endpoint
  * @param agentContract The agent contract with test cases
  * @param timeoutMs Timeout per test case in milliseconds
@@ -151,17 +149,17 @@ export async function executeAllTestCases(
     { endpoint: agentEndpoint, testCount: agentContract.testCases.length },
     'Executing all test cases'
   );
-  
+
   const results: ExecutionResult[] = [];
-  
+
   for (const testCase of agentContract.testCases) {
     const result = await executeTestCase(agentEndpoint, testCase, timeoutMs);
     results.push(result);
   }
-  
+
   const successCount = results.filter(r => r.success).length;
   const avgLatency = results.reduce((sum, r) => sum + r.latencyMs, 0) / results.length;
-  
+
   logger.info(
     {
       total: results.length,
@@ -171,6 +169,6 @@ export async function executeAllTestCases(
     },
     'All test cases executed'
   );
-  
+
   return results;
 }
