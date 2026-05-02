@@ -1,0 +1,11 @@
+{
+  "https://docs.0g.ai/": {
+    "summary": "0G is a decentralized AI operating system providing modular infrastructure for on-chain AI applications including data availability, storage, and compute."
+  },
+  "https://blog.0g.ai/": {
+    "summary": "Latest updates from 0G covering protocol development, partnerships, and ecosystem growth in decentralized AI infrastructure."
+  },
+  "default": {
+    "summary": "This is a mock summary for testing purposes. The agent successfully processed the URL and generated a concise summary of the content."
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "category": "url-summarizer",
+  "version": "1.0.0",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "url": {
+        "type": "string",
+        "format": "uri"
+      }
+    },
+    "required": ["url"]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "summary": {
+        "type": "string"
+      }
+    },
+    "required": ["summary"]
+  },
+  "sla": {
+    "maxLatencyMs": 5000,
+    "maxCostUSD": 0.01
+  },
+  "testCases": [
+    {
+      "id": "tc-01",
+      "description": "Summarize a documentation page",
+      "input": {
+        "url": "https://docs.0g.ai/"
+      },
+      "evaluation": {
+        "criteria": [
+          "Summary captures main topic",
+          "Summary is concise (under 100 words)",
+          "Summary mentions key features or concepts"
+        ]
+      }
+    },
+    {
+      "id": "tc-02",
+      "description": "Summarize a blog post",
+      "input": {
+        "url": "https://blog.0g.ai/"
+      },
+      "evaluation": {
+        "criteria": [
+          "Summary identifies the main point",
+          "Summary is objective and factual"
+        ]
+      }
+    }
+  ]
+}
