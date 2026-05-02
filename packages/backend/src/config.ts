@@ -13,8 +13,10 @@ const configSchema = z.object({
   foroRegistryAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
   agentVaultAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
   
-  // 0G Compute
-  zgComputeProvider: z.string().optional(),
+  // 0G Compute (Simplified - Direct API)
+  zgComputeEndpoint: z.string().url().optional(),
+  zgComputeAuthToken: z.string().optional(),
+  zgComputeModel: z.string().default('qwen/qwen-2.5-7b-instruct'),
   zgComputeEnabled: z.boolean().default(true),
   
   // Keeper Settings
@@ -34,25 +36,27 @@ export type Config = z.infer<typeof configSchema>;
 
 export function loadConfig(): Config {
   const raw = {
-    rpcUrl: process.env.RPC_URL || '',
+    rpcUrl: process.env.ZG_CHAIN_RPC_URL || '',
     privateKey: process.env.KEEPER_PRIVATE_KEY || '',
-    chainId: parseInt(process.env.CHAIN_ID || '16600', 10),
-    
+    chainId: parseInt(process.env.CHAIN_ID || '16602', 10),
+
     foroRegistryAddress: process.env.FORO_REGISTRY_ADDRESS || '',
     agentVaultAddress: process.env.AGENT_VAULT_ADDRESS || '',
-    
-    zgComputeProvider: process.env.ZG_COMPUTE_PROVIDER,
+
+    zgComputeEndpoint: process.env.ZG_COMPUTE_ENDPOINT,
+    zgComputeAuthToken: process.env.ZG_COMPUTE_AUTH_TOKEN,
+    zgComputeModel: process.env.ZG_COMPUTE_MODEL || 'qwen/qwen-2.5-7b-instruct',
     zgComputeEnabled: process.env.ZG_COMPUTE_ENABLED !== 'false',
-    
+
     minTestFee: process.env.MIN_TEST_FEE || '0.001',
     stakeMultiplier: parseInt(process.env.STAKE_MULTIPLIER || '2', 10),
-    
+
     pollIntervalMs: parseInt(process.env.POLL_INTERVAL_MS || '10000', 10),
     blockConfirmations: parseInt(process.env.BLOCK_CONFIRMATIONS || '1', 10),
-    
+
     agentTimeoutMs: parseInt(process.env.AGENT_TIMEOUT_MS || '10000', 10),
     maxRetries: parseInt(process.env.MAX_RETRIES || '0', 10),
   };
-  
+
   return configSchema.parse(raw);
 }
