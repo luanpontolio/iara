@@ -25,7 +25,7 @@ export function HomePage() {
         title="FORO"
         onLogoClick={() => router.push('/app')}
         centerAction={
-          <Button variant="primary" size="md">
+          <Button variant="primary" size="md" onClick={() => router.push('/agent/new')}>
             Request a Foro
           </Button>
         }
