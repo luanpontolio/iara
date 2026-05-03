@@ -37,7 +37,7 @@ export function DetailHeader({ agent }: { agent: ForoDetailAgent }) {
       <div className="grid h-[60px] grid-cols-[1fr_auto_1fr] items-center px-8">
         <button
           type="button"
-          onClick={() => router.push('/')}
+          onClick={() => router.push('/app')}
           className="cursor-pointer justify-self-start border-none bg-transparent p-0 font-serif text-[22px] font-bold uppercase italic leading-none text-text-primary"
         >
           FORO

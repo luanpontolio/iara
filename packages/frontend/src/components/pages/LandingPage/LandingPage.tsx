@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaXTwitter, FaGithub } from 'react-icons/fa6';
-import { Button, Text } from '@/components/atoms';
+import { Button } from '@/components/atoms';
 
 function lcg(seed: number) {
   let s = seed;
@@ -134,10 +134,10 @@ export function LandingPage() {
 
         <div className="flex items-center gap-4">
           <Button variant="primary" size="xl" onClick={() => router.push('/agent/new')}>
-            <Text variant="buttonXl" color="inherit" as="span">Request a Foro</Text>
+            Request a Foro
           </Button>
           <Button variant="ghost" size="xl" onClick={() => router.push('/app')}>
-            <Text variant="buttonXl" color="inherit" as="span">Open app</Text>
+            Open app
           </Button>
         </div>
       </div>

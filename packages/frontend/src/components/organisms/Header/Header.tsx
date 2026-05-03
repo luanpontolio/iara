@@ -15,6 +15,7 @@ import { Text } from '@/components/atoms';
 export interface HeaderProps {
   logo?: React.ReactNode;
   title?: string;
+  centerAction?: React.ReactNode;
   actions?: React.ReactNode;
   className?: string;
   onLogoClick?: () => void;
@@ -31,7 +32,7 @@ export interface HeaderProps {
  * />
  * ```
  */
-function WalletButton() {
+export function WalletButton() {
   const { address, isConnected, chainId } = useAccount();
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
@@ -92,6 +93,7 @@ function WalletButton() {
 export function Header({
   logo,
   title = 'FORO',
+  centerAction,
   actions,
   className,
   onLogoClick,
@@ -99,32 +101,40 @@ export function Header({
   return (
     <header
       className={cn(
-        'flex items-center justify-between',
+        'grid grid-cols-3 items-center',
         'px-8 h-[60px]',
         'flex-shrink-0',
         className
       )}
     >
-      {logo || (
-        <button
-          onClick={onLogoClick}
-          className={cn(
-            'bg-transparent border-none cursor-pointer',
-            'p-0 leading-none',
-            onLogoClick && transition(['opacity']),
-            onLogoClick && 'hover:opacity-80'
-          )}
-        >
-          <Text variant="title" color="primary" className="text-[22px]">
-            {title}
-          </Text>
-        </button>
-      )}
-
-      <div className="flex items-center gap-3">
-        {actions}
-        <WalletButton />
+      <div>
+        {logo || (
+          <button
+            onClick={onLogoClick}
+            className={cn(
+              'bg-transparent border-none cursor-pointer',
+              'p-0 leading-none',
+              onLogoClick && transition(['opacity']),
+              onLogoClick && 'hover:opacity-80'
+            )}
+          >
+            <Text variant="title" color="primary" className="text-[22px]">
+              {title}
+            </Text>
+          </button>
+        )}
       </div>
+
+      <div className="flex justify-center">
+        {centerAction}
+      </div>
+
+      {actions && (
+        <div className="flex items-center gap-3 justify-end">
+          {actions}
+          <WalletButton />
+        </div>
+      )}
     </header>
   );
 }

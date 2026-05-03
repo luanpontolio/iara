@@ -26,15 +26,15 @@ export function HomePage() {
       <Header
         title="FORO"
         onLogoClick={() => router.push('/app')}
+        centerAction={
+          <Button variant="primary" size="sm" className="text-xl" onClick={() => router.push('/agent/new')}>
+            Request a Foro
+          </Button>
+        }
         actions={
-          <>
-            <Button variant="ghost" size="md">
-              Register as Keeper
-            </Button>
-            <Button variant="primary" size="md" onClick={() => router.push('/agent/new')}>
-              Verify my agent
-            </Button>
-          </>
+          <Button variant="ghost" size="sm" className="text-xl">
+            Register as Keeper
+          </Button>
         }
         className="border-b border-border-subtle"
       />
@@ -64,7 +64,7 @@ export function HomePage() {
                       key={a.id}
                       agent={a}
                       variant="waiting"
-                      onClick={() => router.push(`/foro/${a.id}`)}
+                      onClick={() => router.push(`/app/foro/${a.id}`)}
                     />
                   ))}
                 </div>
@@ -122,7 +122,7 @@ export function HomePage() {
                         key={a.id}
                         agent={a}
                         variant="result"
-                        onClick={() => router.push(`/foro/${a.id}`)}
+                        onClick={() => router.push(`/app/foro/${a.id}`)}
                       />
                     ))}
                   </div>
@@ -135,7 +135,7 @@ export function HomePage() {
                             key={a.id}
                             agent={a}
                             variant="result"
-                            onClick={() => router.push(`/foro/${a.id}`)}
+                            onClick={() => router.push(`/app/foro/${a.id}`)}
                           />
                         ))}
                       </div>
