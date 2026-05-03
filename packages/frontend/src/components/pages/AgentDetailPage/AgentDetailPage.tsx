@@ -4,7 +4,8 @@ import { useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { GaugeChart } from '@/components/organisms';
 import { Text } from '@/components/atoms';
-import { useAgentDetail } from '@/hooks';
+import { Tooltip } from '@/components/molecules';
+import { useAgentDetail, useAgentStatus } from '@/hooks';
 import type { ForoDetailAgent, ForoTabId } from '@/lib/constants/types';
 import { DetailHeader } from './DetailHeader';
 import { DetailInfoGrid } from './DetailInfoGrid';
@@ -96,27 +97,52 @@ function AgentDetailBody({ agent }: { agent: ForoDetailAgent }) {
   );
 
   const gauge = gaugePropsFor(agent);
-  console.log('agent------', agent);
+  const { color, meaning } = useAgentStatus({ status: agent.badgeStatus, score: agent.score });
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-bg-primary">
       <DetailHeader agent={agent} />
 
       <div className="flex shrink-0 flex-col items-center px-6 pt-8">
-        <div className="mb-6 text-center">
-          <Text variant="code" color="primary" className="text-[32px] leading-none tracking-tight">
-            {agent.testFee ?? '—'}
-          </Text>
-          <Text variant="bodySmall" color="quaternary" className="mt-2 text-[13px]">
-            {agent.phase === 'settled' ? 'Available to claim' : 'Locked in escrow'}
-          </Text>
-        </div>
-
         <GaugeChart {...gauge} svgWidth={200} svgHeight={120} />
 
-        <Text variant="bodySmall" color="primary" className="mt-3.5 mb-8 text-base font-medium">
-          {agent.name}
-        </Text>
+        {agent.phase === 'settled' && agent.score && (
+          <div className="flex items-center justify-center gap-1.5 mt-2">
+            <Text
+              variant="code"
+              className="text-sm font-medium tracking-wide"
+              style={{ color }}
+            >
+              {agent.score}
+            </Text>
+            <Tooltip content={meaning} position="top">
+              <div
+                className={cn(
+                  'w-[15px] h-[15px] rounded-full border border-border-default',
+                  'flex items-center justify-center cursor-default',
+                  'text-text-muted text-[9px] font-mono flex-shrink-0'
+                )}
+              >
+                i
+              </div>
+            </Tooltip>
+          </div>
+        )}
+
+        {agent.agentEndpointUrl ? (
+          <a
+            href={agent.agentEndpointUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3.5 mb-8 font-sans text-base font-medium text-text-primary transition-colors hover:text-text-secondary hover:underline cursor-pointer"
+          >
+            {agent.name}
+          </a>
+        ) : (
+          <Text variant="bodySmall" color="primary" className="mt-3.5 mb-8 text-base font-medium">
+            {agent.name}
+          </Text>
+        )}
 
         <div className="mb-10 w-full max-w-[540px]">
           <DetailInfoGrid agent={agent} />

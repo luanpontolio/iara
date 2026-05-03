@@ -40,6 +40,8 @@ export interface ForoDetailAgent {
   badgeStatus: AgentStatus;
   phase: ForoPhase;
   creator?: string;
+  creatorFull?: string;
+  agentEndpointUrl?: string;
   txHash?: string;
   testFee?: string;
   stakeRequired?: string;

@@ -17,9 +17,9 @@
  * Returns a `ForoDetailAgent` ready to render in AgentDetailPage.
  */
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { formatEther, hexToString } from 'viem';
-import { useReadContract, useReadContracts } from 'wagmi';
+import { usePublicClient, useReadContract, useReadContracts } from 'wagmi';
 import { AGENT_VAULT_ABI } from '@/contracts/abis/agentVault';
 import { ERC8004_ABI } from '@/contracts/abis/erc8004';
 import { FORO_REGISTRY_ABI } from '@/contracts/abis/foroRegistry';
@@ -29,6 +29,11 @@ import { zgNewtonTestnet } from '@/lib/wagmi';
 const FORO_REGISTRY_ADDRESS = (
   process.env.NEXT_PUBLIC_FORO_REGISTRY_ADDRESS ?? '0x'
 ) as `0x${string}`;
+
+// Index 6 = AgentRegistered event (mirrors useAgentIndexer).
+const AGENT_REGISTERED_EVENT = FORO_REGISTRY_ABI[6];
+const DEPLOY_BLOCK = 31011609n;
+
 
 const AGENT_VAULT_ADDRESS = (
   process.env.NEXT_PUBLIC_AGENT_VAULT_ADDRESS ?? '0x'
@@ -109,6 +114,23 @@ export interface UseAgentDetailReturn {
 
 export function useAgentDetail(foroId: number): UseAgentDetailReturn {
   const foroIdBig = BigInt(foroId);
+  const publicClient = usePublicClient({ chainId: zgNewtonTestnet.id });
+  const [registrationTxHash, setRegistrationTxHash] = useState<`0x${string}` | undefined>();
+
+  useEffect(() => {
+    if (!publicClient || foroId <= 0) return;
+    let cancelled = false;
+    publicClient.getLogs({
+      address: FORO_REGISTRY_ADDRESS,
+      event: AGENT_REGISTERED_EVENT,
+      args: { foroId: BigInt(foroId) },
+      fromBlock: DEPLOY_BLOCK,
+      toBlock: 'latest',
+    }).then(logs => {
+      if (!cancelled) setRegistrationTxHash(logs[0]?.transactionHash);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [publicClient, foroId]);
 
   // Round 1: fetch agent data.
   const { data: round1, isLoading: r1Loading, isError: r1Error } = useReadContracts({
@@ -218,14 +240,25 @@ export function useAgentDetail(foroId: number): UseAgentDetailReturn {
   const erc8004Address = agentRaw?.erc8004Address;
   const erc8004AgentId = agentRaw?.erc8004AgentId;
 
-  // Round 2: fetch agent name from ERC-8004 metadata, enabled once Round 1 resolves.
+  const erc8004Enabled = !!erc8004Address && erc8004AgentId !== undefined;
+
+  // Fetch agent contract JSON (name) and endpoint URL from ERC-8004 metadata.
   const { data: metaBytes, isLoading: metaLoading } = useReadContract({
     address: erc8004Address,
     abi: ERC8004_ABI,
     functionName: 'getMetadata',
     args: erc8004AgentId !== undefined ? [erc8004AgentId, 'foro:contract'] : undefined,
     chainId: zgNewtonTestnet.id,
-    query: { enabled: !!erc8004Address && erc8004AgentId !== undefined },
+    query: { enabled: erc8004Enabled },
+  });
+
+  const { data: endpointBytes, isLoading: endpointLoading } = useReadContract({
+    address: erc8004Address,
+    abi: ERC8004_ABI,
+    functionName: 'getMetadata',
+    args: erc8004AgentId !== undefined ? [erc8004AgentId, 'foro:endpoint'] : undefined,
+    chainId: zgNewtonTestnet.id,
+    query: { enabled: erc8004Enabled },
   });
 
   const agent = useMemo<ForoDetailAgent | null>(() => {
@@ -248,6 +281,7 @@ export function useAgentDetail(foroId: number): UseAgentDetailReturn {
     const status = ON_CHAIN_STATUS[agentRaw.status] ?? 'pending';
     let phase = ON_CHAIN_PHASE[agentRaw.status] ?? 'queued';
 
+
     // If the job has reached a terminal state, override phase to 'settled'
     // regardless of AgentStatus (e.g. PROBATION still maps to 'running' without this).
     const TERMINAL_JOB_STATUSES = [5, 6, 7]; // FINALIZED, REFUNDED, FAILED
@@ -269,11 +303,13 @@ export function useAgentDetail(foroId: number): UseAgentDetailReturn {
     const detail: ForoDetailAgent = {
       id: foroId,
       name,
-      foroId: `foro_${formatAddress(agentRaw.erc8004Address) ?? agentRaw.erc8004Address}`,
+      foroId: String(foroId),
       badgeStatus: status,
       phase,
       progress,
     };
+
+    if (registrationTxHash) detail.txHash = registrationTxHash;
 
     const creator = formatAddress(agentRaw.creatorWallet);
     if (creator) detail.creator = creator;
@@ -337,12 +373,26 @@ export function useAgentDetail(foroId: number): UseAgentDetailReturn {
 
     if (agentContractJson) detail.agentContractJson = agentContractJson;
 
+    // Full creator address for linking.
+    if (agentRaw.creatorWallet && agentRaw.creatorWallet !== ZERO_ADDRESS)
+      detail.creatorFull = agentRaw.creatorWallet;
+
+    // Agent endpoint URL from ERC-8004 foro:endpoint metadata.
+    if (endpointBytes) {
+      try {
+        const url = hexToString(endpointBytes);
+        if (url) detail.agentEndpointUrl = url;
+      } catch {
+        // ignore malformed bytes
+      }
+    }
+
     return detail;
-  }, [agentRaw, jobRaw, resultRaw, escrowedRaw, metaBytes, foroId]);
+  }, [agentRaw, jobRaw, resultRaw, escrowedRaw, metaBytes, endpointBytes, foroId, registrationTxHash]);
 
   return {
     agent,
-    isLoading: r1Loading || r2Loading || r3Loading || metaLoading,
+    isLoading: r1Loading || r2Loading || r3Loading || metaLoading || endpointLoading,
     isError: r1Error,
   };
 }

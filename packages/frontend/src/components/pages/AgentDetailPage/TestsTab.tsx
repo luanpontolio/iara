@@ -1,41 +1,13 @@
 'use client';
 
-import { Badge } from '@/components/atoms';
 import { Text } from '@/components/atoms';
 import type { ForoDetailAgent } from '@/lib/constants/types';
 import { cn } from '@/lib/utils/styles';
 
 export function TestsTab({ agent }: { agent: ForoDetailAgent }) {
   if (agent.phase === 'settled') {
-    const [done] = agent.progress ?? [0, 0];
     return (
       <div className="flex flex-col gap-3">
-        <div className="rounded border border-border-subtle bg-bg-tertiary px-4 py-4">
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div className="flex flex-col items-center gap-1.5">
-              <Text variant="label" color="muted" className="text-[10px] tracking-widest">
-                TESTS RUN
-              </Text>
-              <Text variant="code" color="secondary" className="text-sm">
-                {done}/{done}
-              </Text>
-            </div>
-            <div className="flex flex-col items-center gap-1.5">
-              <Text variant="label" color="muted" className="text-[10px] tracking-widest">
-                SCORE
-              </Text>
-              <Text variant="code" color="primary" className="text-sm">
-                {agent.score ?? '—'}
-              </Text>
-            </div>
-            <div className="flex flex-col items-center gap-1.5">
-              <Text variant="label" color="muted" className="text-[10px] tracking-widest">
-                RESULT
-              </Text>
-              <Badge variant={agent.badgeStatus} size="xs" />
-            </div>
-          </div>
-        </div>
         {agent.avgLatencyMs !== undefined && (
           <div className="flex items-baseline justify-between border-b border-border-subtle py-2.5">
             <Text variant="bodySmall" color="muted" className="text-xs">
