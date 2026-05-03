@@ -24,6 +24,12 @@ export interface Agent {
   status: AgentStatus;
   testFee?: string;
   elapsedTime?: string;
+  latencyScore?: string;
+  qualityScore?: string;
+  avgLatencyMs?: number;
+  teeVerified?: boolean;
+  keeper?: string;
+  lastJobScore?: string;
 }
 
 /** Agent detail view (Foro ID route) — richer than list `Agent` */

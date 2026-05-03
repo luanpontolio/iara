@@ -254,8 +254,8 @@ export function useAgentDetail(foroId: number): UseAgentDetailReturn {
     if (jobRaw?.status !== undefined && TERMINAL_JOB_STATUSES.includes(jobRaw.status)) {
       phase = 'settled';
     }
-    const score = formatScore(agentRaw.cumulativeScore, agentRaw.testCount);
-    const totalTests = Number(agentRaw.testCount);
+    const score = resultRaw?.score ? formatScore(resultRaw.score, 1n) : undefined;
+    const totalTests = Number(agentRaw.testCount ?? 0n);
     const doneTests = Number(resultRaw?.rounds ?? 0n);
     const progress: [number, number] = [doneTests, totalTests];
 
@@ -291,11 +291,12 @@ export function useAgentDetail(foroId: number): UseAgentDetailReturn {
 
     // Vault balance: actual escrowed amount (0 after finalization).
     if (escrowedRaw !== undefined)
-      detail.vaultBalance = formatFee(escrowedRaw);
+      detail.vaultBalance = formatFee(escrowedRaw as bigint);
 
     // Reward distribution computed from the original test fee.
     console.log('jobRaw------', jobRaw);
     console.log('escrowedRaw------', escrowedRaw);
+    console.log('jobResult------', resultRaw);
     if (jobRaw?.testFee && jobRaw.testFee > 0n) {
       const fee = jobRaw.testFee;
       detail.keeperEarned = formatFee((fee * 70n) / 100n);
@@ -316,22 +317,22 @@ export function useAgentDetail(foroId: number): UseAgentDetailReturn {
       if (startedAt) detail.startedAt = startedAt;
     }
 
-    if (hasChatId) detail.chatId = resultRaw!.chatId;
+    if (hasChatId && resultRaw) detail.chatId = resultRaw.chatId;
 
-    if (hasResult) {
-      const submittedAt = relativeTime(resultRaw!.submissionTimestamp);
+    if (hasResult && resultRaw) {
+      const submittedAt = relativeTime(resultRaw.submissionTimestamp);
       if (submittedAt) detail.block = submittedAt;
 
-      detail.teeVerified = resultRaw!.teeVerified;
+      detail.teeVerified = resultRaw.teeVerified;
 
-      if (resultRaw!.avgLatencyMs > 0n)
-        detail.avgLatencyMs = Number(resultRaw!.avgLatencyMs);
+      if (resultRaw.avgLatencyMs > 0n)
+        detail.avgLatencyMs = Number(resultRaw.avgLatencyMs);
 
-      if (resultRaw!.latencyScore > 0n)
-        detail.latencyScore = normaliseScore(resultRaw!.latencyScore);
+      if (resultRaw.latencyScore > 0n)
+        detail.latencyScore = normaliseScore(resultRaw.latencyScore);
 
-      if (resultRaw!.qualityScore > 0n)
-        detail.qualityScore = normaliseScore(resultRaw!.qualityScore);
+      if (resultRaw.qualityScore > 0n)
+        detail.qualityScore = normaliseScore(resultRaw.qualityScore);
     }
 
     if (agentContractJson) detail.agentContractJson = agentContractJson;

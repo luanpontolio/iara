@@ -55,6 +55,22 @@ export class KeeperService {
   }
 
   /**
+   * Finalize the result for a single foroId.
+   * Useful for manually finalizing after the contestation window has passed.
+   */
+  async finalizeJob(foroId: bigint): Promise<void> {
+    logger.info({ foroId: foroId.toString() }, 'Finalizing result');
+
+    const finalizeTx = await this.contracts.foroRegistry.finalizeResult(foroId);
+    if (!finalizeTx) {
+      throw new Error('Failed to create finalize transaction');
+    }
+    await finalizeTx.wait(this.config.blockConfirmations);
+
+    logger.info({ foroId: foroId.toString(), txHash: finalizeTx.hash }, 'Result finalized');
+  }
+
+  /**
    * Run the full keeper workflow for a single foroId and exit.
    * Useful for one-off executions without polling.
    */
@@ -309,23 +325,23 @@ export class KeeperService {
         logger.info({ foroId: foroId.toString(), txHash: submitTx.hash }, 'Result submitted');
         
         // 11. Wait for contestation window, then finalize
-        const contestationWindow = 3600; // 1 hour in seconds
+        // const contestationWindow = 3600; // 1 hour in seconds
         logger.info(
-          { foroId: foroId.toString(), waitSeconds: contestationWindow },
+          { foroId: foroId.toString() },
           'Waiting for contestation window'
         );
         
         await new Promise(resolve => setTimeout(resolve, 0));
         
-        logger.info({ foroId: foroId.toString() }, 'Finalizing result');
+        logger.info({ foroId: foroId.toString() }, 'Awaiting to Finalizing');
         
-        const finalizeTx = await this.contracts.foroRegistry.finalizeResult(foroId);
-        if (!finalizeTx) {
-          throw new Error('Failed to create finalize transaction');
-        }
-        await finalizeTx.wait(this.config.blockConfirmations);
+        // const finalizeTx = await this.contracts.foroRegistry.finalizeResult(foroId);
+        // if (!finalizeTx) {
+        //   throw new Error('Failed to create finalize transaction');
+        // }
+        // await finalizeTx.wait(this.config.blockConfirmations);
         
-        logger.info({ foroId: foroId.toString(), txHash: finalizeTx.hash }, 'Result finalized');
+        // logger.info({ foroId: foroId.toString(), txHash: finalizeTx.hash }, 'Result finalized');
         
       } catch (testError) {
         // Handle test failure - submit failed result

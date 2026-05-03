@@ -20,7 +20,8 @@
     "mock-agent:serve": "tsx src/mock-agent/server.ts",
     "mock-agent:request-test": "tsx scripts/request-test.ts",
     "test:full-flow": "tsx scripts/test-full-flow.ts",
-    "keeper:run-foro": "tsx scripts/run-foro.ts"
+    "keeper:run-foro": "tsx scripts/run-foro.ts",
+    "keeper:finalize-foro": "tsx scripts/finalize-foro.ts"
   },
   "dependencies": {
     "@foro/types": "workspace:*",

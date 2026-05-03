@@ -26,6 +26,7 @@
 
 import { useMemo } from 'react';
 import { useReadContracts } from 'wagmi';
+import { formatEther } from 'viem';
 import { FORO_REGISTRY_ABI } from '@/contracts/abis/foroRegistry';
 import type { Agent, AgentStatus } from '@/lib/constants/types';
 import { zgNewtonTestnet } from '@/lib/wagmi';
@@ -63,10 +64,29 @@ interface AgentOnChain {
   registrationTimestamp: bigint;
 }
 
-// interface JobOnChain {
-//   foroId: bigint;
-//   status: number;
-// }
+interface JobOnChain {
+  foroId: bigint;
+  status: number;
+  testFee: bigint;
+  keeperAddress: `0x${string}`;
+  commitTimestamp: bigint;
+  revealTimestamp: bigint;
+}
+
+interface TestResultOnChain {
+  foroId: bigint;
+  score: bigint;
+  latencyScore: bigint;
+  qualityScore: bigint;
+  avgLatencyMs: bigint;
+  rounds: bigint;
+  chatId: `0x${string}`;
+  teeVerified: boolean;
+  submissionTimestamp: bigint;
+  finalized: boolean;
+}
+
+const SUBMITTED_JOB_STATUS = 3; // JobStatus.SUBMITTED
 
 function formatScore(cumulativeScore: bigint, testCount: bigint): string {
   if (testCount === 0n) return '—';
@@ -128,43 +148,65 @@ export function useAgentList(): UseAgentListReturn {
   });
 
   // Round 2: latest job ID per agent (index-aligned with agentContracts).
-  // const jobIdContracts = useMemo(
-  //   () =>
-  //     agents.map(({ foroId }) => ({
-  //       address: FORO_REGISTRY_ADDRESS,
-  //       abi: FORO_REGISTRY_ABI,
-  //       functionName: 'getLatestTestJobId' as const,
-  //       args: [foroId] as const,
-  //       chainId: zgNewtonTestnet.id,
-  //     })),
-  //   [agents],
-  // );
+  const jobIdContracts = useMemo(
+    () =>
+      agents.map(({ foroId }) => ({
+        address: FORO_REGISTRY_ADDRESS,
+        abi: FORO_REGISTRY_ABI,
+        functionName: 'getLatestTestJobId' as const,
+        args: [foroId] as const,
+        chainId: zgNewtonTestnet.id,
+      })),
+    [agents],
+  );
 
-  // const { data: jobIdData, isLoading: jobIdsLoading } = useReadContracts({
-  //   contracts: jobIdContracts,
-  //   query: { enabled: agents.length > 0 },
-  // });
+  const { data: jobIdData, isLoading: jobIdsLoading } = useReadContracts({
+    contracts: jobIdContracts,
+    query: { enabled: agents.length > 0 },
+  });
 
   // Round 3: job struct for each resolved job ID (index-aligned).
   // jobId=0n returns an empty struct (foroId===0n) — safe to query.
-  // const jobContracts = useMemo(() => {
-  //   if (!jobIdData) return [];
-  //   return jobIdData.map((result) => {
-  //     const jobId = result.status === 'success' ? result.result : 0n;
-  //     return {
-  //       address: FORO_REGISTRY_ADDRESS,
-  //       abi: FORO_REGISTRY_ABI,
-  //       functionName: 'getTestJob' as const,
-  //       args: [jobId] as const,
-  //       chainId: zgNewtonTestnet.id,
-  //     };
-  //   });
-  // }, [jobIdData]);
+  const jobContracts = useMemo(() => {
+    if (!jobIdData) return [];
+    return jobIdData.map((result) => {
+      const jobId = result.status === 'success' ? result.result : 0n;
+      return {
+        address: FORO_REGISTRY_ADDRESS,
+        abi: FORO_REGISTRY_ABI,
+        functionName: 'getTestJob' as const,
+        args: [jobId] as const,
+        chainId: zgNewtonTestnet.id,
+      };
+    });
+  }, [jobIdData]);
 
-  // const { data: jobData, isLoading: jobsLoading } = useReadContracts({
-  //   contracts: jobContracts,
-  //   query: { enabled: jobContracts.length > 0 },
-  // });
+  const { data: jobData, isLoading: jobsLoading } = useReadContracts({
+    contracts: jobContracts,
+    query: { enabled: jobContracts.length > 0 },
+  });
+
+  // Round 4: test result for each resolved job ID (index-aligned with jobContracts).
+  const resultContracts = useMemo(() => {
+    if (!jobIdData) return [];
+    return jobIdData.map((result) => {
+      const jobId = result.status === 'success' ? result.result : 0n;
+      return {
+        address: FORO_REGISTRY_ADDRESS,
+        abi: FORO_REGISTRY_ABI,
+        functionName: 'getTestResult' as const,
+        args: [jobId] as const,
+        chainId: zgNewtonTestnet.id,
+      };
+    });
+  }, [jobIdData]);
+
+  const { data: resultData, isLoading: resultsLoading } = useReadContracts({
+    contracts: resultContracts,
+    query: { enabled: resultContracts.length > 0 },
+  });
+
+  
 
   const { waiting, live, verified, failed } = useMemo(() => {
     const buckets: UseAgentListReturn = {
@@ -184,26 +226,47 @@ export function useAgentList(): UseAgentListReturn {
       const raw = result.result as AgentOnChain;
       const name = agents[idx]?.name ?? `agent-${idx}`;
 
-      // const jobResult = jobData?.[idx];
-      // const job = jobResult?.status === 'success' ? (jobResult.result as JobOnChain) : undefined;
-
       const agent = toAgent(raw, name);
 
-      if (agent.status === 'pending') buckets.waiting.push(agent);
-      else if (agent.status === 'live') buckets.live.push(agent);
-      else if (agent.status === 'verified' || agent.status === 'elite') buckets.verified.push(agent);
-      else if (agent.status === 'failed') buckets.failed.push(agent);
+      const jobResult = jobData?.[idx];
+      const job = jobResult?.status === 'success' ? (jobResult.result as JobOnChain) : undefined;
+
+      const resultResult = resultData?.[idx];
+      const testResult = resultResult?.status === 'success' ? (resultResult.result as TestResultOnChain) : undefined;
+
+      if (job) {
+        agent.testFee = formatEther(job.testFee);
+        agent.keeper = formatAddress(job.keeperAddress);
+      }
+      if (testResult) {
+        agent.lastJobScore = formatScore(testResult.score, 1n);
+        agent.latencyScore = testResult.latencyScore.toString();
+        agent.qualityScore = testResult.qualityScore.toString();
+        agent.avgLatencyMs = Number(testResult.avgLatencyMs);
+        agent.teeVerified = testResult.teeVerified;
+        agent.tests = testResult.rounds.toString();
+      }
+
+      if (job?.status === SUBMITTED_JOB_STATUS) {
+        buckets.live.push(agent);
+      } else if (agent.status === 'pending') {
+        buckets.waiting.push(agent);
+      } else if (agent.status === 'verified' || agent.status === 'elite') {
+        buckets.verified.push(agent);
+      } else if (agent.status === 'failed') {
+        buckets.failed.push(agent);
+      }
     });
 
     return buckets;
-  }, [agentData, agents]);
+  }, [agentData, agents, jobData, resultData]);
 
   return {
     waiting,
     live,
     verified,
     failed,
-    isLoading: agentsLoading || isIndexing,
+    isLoading: agentsLoading || isIndexing || jobIdsLoading || jobsLoading || resultsLoading,
     isError,
   };
 }

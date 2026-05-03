@@ -43,7 +43,7 @@ export function AgentCard({
   const { isHovered, hoverProps } = useHover();
   const { color, meaning, scoreNum } = useAgentStatus({
     status: agent.status,
-    score: agent.score,
+    score: agent.lastJobScore ?? 0,
   });
 
   // Common gauge row
@@ -86,6 +86,7 @@ export function AgentCard({
   // Live variant
   if (variant === 'live') {
     const parts = agent.tests.split('/');
+    console.log('parts------', parts);
     const done = Number(parts[0] ?? 0);
     const total = Number(parts[1] ?? 0);
     const progress = total > 0 ? done / total : 0;
