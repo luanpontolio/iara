@@ -32,7 +32,7 @@ export interface HeaderProps {
  * />
  * ```
  */
-function WalletButton() {
+export function WalletButton() {
   const { address, isConnected, chainId } = useAccount();
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
@@ -132,6 +132,7 @@ export function Header({
       {actions && (
         <div className="flex items-center gap-3 justify-end">
           {actions}
+          <WalletButton />
         </div>
       )}
     </header>

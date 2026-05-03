@@ -46,10 +46,10 @@ const ON_CHAIN_STATUS: AgentStatus[] = [
 
 // JobStatus values whose presence means the latest test is over and the agent
 // is idle — waiting for a new test request.
-const TERMINAL_JOB_STATUSES = new Set([5, 6, 7]); // FINALIZED, REFUNDED, FAILED
+// const TERMINAL_JOB_STATUSES = new Set([5, 6, 7]); // FINALIZED, REFUNDED, FAILED
 
 // JobStatus values that indicate an active test is in progress.
-const ACTIVE_JOB_STATUSES = new Set([0, 1, 2, 3, 4]); // REQUESTED…CONTESTED
+// const ACTIVE_JOB_STATUSES = new Set([0, 1, 2, 3, 4]); // REQUESTED…CONTESTED
 
 interface AgentOnChain {
   foroId: bigint;
@@ -63,10 +63,10 @@ interface AgentOnChain {
   registrationTimestamp: bigint;
 }
 
-interface JobOnChain {
-  foroId: bigint;
-  status: number;
-}
+// interface JobOnChain {
+//   foroId: bigint;
+//   status: number;
+// }
 
 function formatScore(cumulativeScore: bigint, testCount: bigint): string {
   if (testCount === 0n) return '—';
@@ -128,17 +128,17 @@ export function useAgentList(): UseAgentListReturn {
   });
 
   // Round 2: latest job ID per agent (index-aligned with agentContracts).
-  const jobIdContracts = useMemo(
-    () =>
-      agents.map(({ foroId }) => ({
-        address: FORO_REGISTRY_ADDRESS,
-        abi: FORO_REGISTRY_ABI,
-        functionName: 'getLatestTestJobId' as const,
-        args: [foroId] as const,
-        chainId: zgNewtonTestnet.id,
-      })),
-    [agents],
-  );
+  // const jobIdContracts = useMemo(
+  //   () =>
+  //     agents.map(({ foroId }) => ({
+  //       address: FORO_REGISTRY_ADDRESS,
+  //       abi: FORO_REGISTRY_ABI,
+  //       functionName: 'getLatestTestJobId' as const,
+  //       args: [foroId] as const,
+  //       chainId: zgNewtonTestnet.id,
+  //     })),
+  //   [agents],
+  // );
 
   // const { data: jobIdData, isLoading: jobIdsLoading } = useReadContracts({
   //   contracts: jobIdContracts,

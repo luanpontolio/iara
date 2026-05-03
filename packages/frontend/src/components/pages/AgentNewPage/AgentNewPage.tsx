@@ -17,11 +17,7 @@ export function AgentNewPage() {
     <div className="flex h-screen flex-col overflow-hidden bg-bg-primary">
       <Header
         title="FORO"
-<<<<<<< HEAD
-        onLogoClick={() => router.push('/')}
-=======
         onLogoClick={() => router.push('/app')}
->>>>>>> origin/design-system
         className="border-b border-border-subtle"
       />
 
@@ -68,11 +64,7 @@ export function AgentNewPage() {
             <h1 className="font-sans text-lg font-medium text-text-primary">
               {step === 1 ? 'Register Agent' : 'Request Test'}
             </h1>
-<<<<<<< HEAD
-            <p className="mt-1 font-mono text-xs text-text-muted">
-=======
             <p className="mt-1 font-mono text-sm text-text-muted">
->>>>>>> origin/design-system
               {step === 1
                 ? 'Mint an ERC-8004 token, set metadata, and register your agent on ForoRegistry.'
                 : 'Pay the test fee to trigger an on-chain evaluation by a keeper.'}

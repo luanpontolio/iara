@@ -87,14 +87,9 @@ export function HomePage() {
               <ColumnCount count={live.length} label={`${pluralize(live.length, 'agent')} running`} />
             </div>
             <div className="scrollbar-thin flex flex-1 flex-col gap-2 overflow-y-auto px-5 pb-6">
-<<<<<<< HEAD
               {isLoading && <span className="px-1 text-xs text-text-tertiary">Loading…</span>}
               {live.map(a => (
                 <AgentCard key={a.id} agent={a} variant="live" onClick={() => router.push(`/${a.id}`)} />
-=======
-              {HOME_LIVE.map(a => (
-                <AgentCard key={a.id} agent={a} variant="live" onClick={() => router.push(`/app/foro/${a.id}`)} />
->>>>>>> origin/design-system
               ))}
             </div>
           </div>
