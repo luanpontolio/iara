@@ -267,12 +267,14 @@ export function useAgentDetail(foroId: number): UseAgentDetailReturn {
     // Resolve name and store raw contract JSON from ERC-8004 metadata.
     let name = `agent_${foroId}`;
     let agentContractJson: string | undefined;
+    let contractTestCaseCount = 0;
     if (metaBytes) {
       try {
         const jsonStr = hexToString(metaBytes);
         agentContractJson = jsonStr;
-        const json = JSON.parse(jsonStr) as { name?: string };
+        const json = JSON.parse(jsonStr) as { name?: string; testCases?: unknown[] };
         if (json.name) name = json.name;
+        contractTestCaseCount = json.testCases?.length ?? 0;
       } catch {
         // keep fallback name
       }
@@ -281,7 +283,6 @@ export function useAgentDetail(foroId: number): UseAgentDetailReturn {
     const status = ON_CHAIN_STATUS[agentRaw.status] ?? 'pending';
     let phase = ON_CHAIN_PHASE[agentRaw.status] ?? 'queued';
 
-
     // If the job has reached a terminal state, override phase to 'settled'
     // regardless of AgentStatus (e.g. PROBATION still maps to 'running' without this).
     const TERMINAL_JOB_STATUSES = [5, 6, 7]; // FINALIZED, REFUNDED, FAILED
@@ -289,8 +290,11 @@ export function useAgentDetail(foroId: number): UseAgentDetailReturn {
       phase = 'settled';
     }
     const score = resultRaw?.score ? formatScore(resultRaw.score, 1n) : undefined;
-    const totalTests = Number(agentRaw.testCount ?? 0n);
+    // doneTests = rounds actually executed in the latest job.
+    // totalTests = test cases defined in the agent contract (falls back to doneTests
+    // when the contract JSON isn't available or has no testCases, giving X/X).
     const doneTests = Number(resultRaw?.rounds ?? 0n);
+    const totalTests = contractTestCaseCount > 0 ? contractTestCaseCount : doneTests;
     const progress: [number, number] = [doneTests, totalTests];
 
     const hasResult =

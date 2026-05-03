@@ -7,7 +7,7 @@ const EXPLORER_BASE =
   process.env.NEXT_PUBLIC_CHAIN_EXPLORER ?? 'https://explorer.0g.ai/testnet/blockchain';
 
 function truncateTxHash(hash: string): string {
-  return `${hash.slice(0, 6)}...${hash.slice(-4)}`;
+  return `${hash.slice(0, 6)}…${hash.slice(-4)}`;
 }
 
 

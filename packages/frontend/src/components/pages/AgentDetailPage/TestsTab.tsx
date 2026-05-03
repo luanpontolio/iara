@@ -9,13 +9,13 @@ export function TestsTab({ agent }: { agent: ForoDetailAgent }) {
     return (
       <div className="flex flex-col gap-3">
         {agent.avgLatencyMs !== undefined && (
-          <div className="flex items-baseline justify-between border-b border-border-subtle py-2.5">
-            <Text variant="bodySmall" color="muted" className="text-xs">
+          <div className="flex flex-col gap-1.5 border-b border-border-subtle py-2.5">
+            <Text variant="bodySmall" color="muted" className="whitespace-nowrap text-xs">
               Avg latency
             </Text>
-            <Text variant="code" color="tertiary" className="text-xs">
+            <span className="font-mono text-xs text-text-tertiary">
               {agent.avgLatencyMs}ms
-            </Text>
+            </span>
           </div>
         )}
       </div>

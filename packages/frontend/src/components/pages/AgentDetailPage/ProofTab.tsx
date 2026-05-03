@@ -3,20 +3,20 @@
 import { Text } from '@/components/atoms';
 import type { ForoDetailAgent } from '@/lib/constants/types';
 
-export function ProofTab({ agent }: { agent: ForoDetailAgent }) {
-  // if (agent.phase !== 'settled') {
-  //   return (
-  //     <div className="flex flex-col items-center gap-2 py-10">
-  //       <Text variant="bodySmall" color="muted" className="text-[13px]">
-  //         TEE proof will appear here once the test settles.
-  //       </Text>
-  //       <Text variant="code" color="disabled" className="text-[11px]">
-  //         chatId · enclave signature · block anchor
-  //       </Text>
-  //     </div>
-  //   );
-  // }
+function Row({ label, value }: { label: string; value: string | undefined }) {
+  return (
+    <div className="flex flex-col gap-1.5 border-b border-border-subtle py-2.5">
+      <Text variant="bodySmall" color="muted" className="whitespace-nowrap text-xs">
+        {label}
+      </Text>
+      <span className="break-all font-mono text-xs text-text-tertiary">
+        {value ?? '—'}
+      </span>
+    </div>
+  );
+}
 
+export function ProofTab({ agent }: { agent: ForoDetailAgent }) {
   const rows = [
     { label: 'chatId (0G Compute)', value: agent.chatId },
     {
@@ -36,17 +36,7 @@ export function ProofTab({ agent }: { agent: ForoDetailAgent }) {
   return (
     <div>
       {rows.map(r => (
-        <div
-          key={r.label}
-          className="flex items-baseline justify-between border-b border-border-subtle py-2.5"
-        >
-          <Text variant="bodySmall" color="muted" className="text-xs">
-            {r.label}
-          </Text>
-          <Text variant="code" color="tertiary" className="text-xs">
-            {r.value ?? '—'}
-          </Text>
-        </div>
+        <Row key={r.label} label={r.label} value={r.value} />
       ))}
     </div>
   );
