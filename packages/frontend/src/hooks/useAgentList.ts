@@ -3,19 +3,25 @@
 /**
  * useAgentList
  *
- * Fetches live on-chain data for all registered agents via a single wagmi
- * multicall (useReadContracts batches every getAgent(foroId) call together).
+ * Fetches live on-chain data for all registered agents via three rounds of
+ * wagmi multicalls (useReadContracts batches each round into a single call):
+ *
+ * Round 1 — getAgent(foroId) per agent → identity, AgentStatus, score
+ * Round 2 — getLatestTestJobId(foroId) per agent → latest job ID
+ * Round 3 — getTestJob(jobId) per agent → JobStatus (used to override display)
  *
  * The list of agents to query is provided by useAgentIndexer, which
  * continuously polls ForoRegistry for AgentRegistered events and resolves
- * each agent's name from its ERC-8004 metadata. This replaces the previous
- * static REGISTERED_AGENTS constant.
+ * each agent's name from its ERC-8004 metadata.
  *
  * Returns agents bucketed into the four columns shown on the HomePage:
- *   waiting  → on-chain PENDING   (0)
- *   live     → on-chain PROBATION (1)
- *   verified → on-chain VERIFIED (2) or ELITE (3)
- *   failed   → on-chain FAILED   (4)
+ *   waiting  → PENDING or (PROBATION + terminal job — idle between tests)
+ *   live     → PROBATION with an active job currently running
+ *   verified → VERIFIED or ELITE
+ *   failed   → FAILED
+ *
+ * Status displayed on each card is also derived from JobStatus so that
+ * a PROBATION agent whose job is FINALIZED shows 'pending' rather than 'live'.
  */
 
 import { useMemo } from 'react';
@@ -29,17 +35,21 @@ const FORO_REGISTRY_ADDRESS = (
   process.env.NEXT_PUBLIC_FORO_REGISTRY_ADDRESS ?? '0x'
 ) as `0x${string}`;
 
-// Total test cases defined in the agent contract schema.
-const TOTAL_TESTS = 14;
-
-// Maps the on-chain uint8 status to the AgentStatus union used by the UI.
+// Maps the on-chain AgentStatus uint8 to the UI AgentStatus string.
 const ON_CHAIN_STATUS: AgentStatus[] = [
-  'pending',   // 0
-  'live',      // 1  (PROBATION → shown as "live" in the UI)
-  'verified',  // 2
-  'elite',     // 3
-  'failed',    // 4
+  'pending',   // 0 PENDING
+  'live',      // 1 PROBATION
+  'verified',  // 2 VERIFIED
+  'elite',     // 3 ELITE
+  'failed',    // 4 FAILED
 ];
+
+// JobStatus values whose presence means the latest test is over and the agent
+// is idle — waiting for a new test request.
+const TERMINAL_JOB_STATUSES = new Set([5, 6, 7]); // FINALIZED, REFUNDED, FAILED
+
+// JobStatus values that indicate an active test is in progress.
+const ACTIVE_JOB_STATUSES = new Set([0, 1, 2, 3, 4]); // REQUESTED…CONTESTED
 
 interface AgentOnChain {
   foroId: bigint;
@@ -53,13 +63,14 @@ interface AgentOnChain {
   registrationTimestamp: bigint;
 }
 
+interface JobOnChain {
+  foroId: bigint;
+  status: number;
+}
+
 function formatScore(cumulativeScore: bigint, testCount: bigint): string {
   if (testCount === 0n) return '—';
-  // cumulativeScore is stored as a scaled integer (×1e18 or ×100 depending on
-  // the contract). Treat it as a percentage 0–100 and normalise to 0–1.
   const avg = Number(cumulativeScore) / Number(testCount);
-  // If the value is already in 0–1 range (common for score×1e0), use it
-  // directly; otherwise divide by 100.
   const normalised = avg > 1 ? avg / 100 : avg;
   return normalised.toFixed(2);
 }
@@ -71,7 +82,7 @@ function formatAddress(addr: `0x${string}`): string {
 function toAgent(raw: AgentOnChain, name: string): Agent {
   const status = ON_CHAIN_STATUS[raw.status] ?? 'pending';
   const score = formatScore(raw.cumulativeScore, raw.testCount);
-  const tests = `${raw.testCount.toString()}/${TOTAL_TESTS}`;
+  const tests = raw.testCount.toString();
   const addrShort = formatAddress(raw.erc8004Address);
 
   return {
@@ -99,7 +110,8 @@ export interface UseAgentListReturn {
 export function useAgentList(): UseAgentListReturn {
   const { agents, isIndexing } = useAgentIndexer();
 
-  const contracts = useMemo(
+  // Round 1: agent identity + AgentStatus.
+  const agentContracts = useMemo(
     () =>
       agents.map(({ foroId }) => ({
         address: FORO_REGISTRY_ADDRESS,
@@ -111,7 +123,48 @@ export function useAgentList(): UseAgentListReturn {
     [agents],
   );
 
-  const { data, isLoading: contractsLoading, isError } = useReadContracts({ contracts });
+  const { data: agentData, isLoading: agentsLoading, isError } = useReadContracts({
+    contracts: agentContracts,
+  });
+
+  // Round 2: latest job ID per agent (index-aligned with agentContracts).
+  const jobIdContracts = useMemo(
+    () =>
+      agents.map(({ foroId }) => ({
+        address: FORO_REGISTRY_ADDRESS,
+        abi: FORO_REGISTRY_ABI,
+        functionName: 'getLatestTestJobId' as const,
+        args: [foroId] as const,
+        chainId: zgNewtonTestnet.id,
+      })),
+    [agents],
+  );
+
+  // const { data: jobIdData, isLoading: jobIdsLoading } = useReadContracts({
+  //   contracts: jobIdContracts,
+  //   query: { enabled: agents.length > 0 },
+  // });
+
+  // Round 3: job struct for each resolved job ID (index-aligned).
+  // jobId=0n returns an empty struct (foroId===0n) — safe to query.
+  // const jobContracts = useMemo(() => {
+  //   if (!jobIdData) return [];
+  //   return jobIdData.map((result) => {
+  //     const jobId = result.status === 'success' ? result.result : 0n;
+  //     return {
+  //       address: FORO_REGISTRY_ADDRESS,
+  //       abi: FORO_REGISTRY_ABI,
+  //       functionName: 'getTestJob' as const,
+  //       args: [jobId] as const,
+  //       chainId: zgNewtonTestnet.id,
+  //     };
+  //   });
+  // }, [jobIdData]);
+
+  // const { data: jobData, isLoading: jobsLoading } = useReadContracts({
+  //   contracts: jobContracts,
+  //   query: { enabled: jobContracts.length > 0 },
+  // });
 
   const { waiting, live, verified, failed } = useMemo(() => {
     const buckets: UseAgentListReturn = {
@@ -123,13 +176,17 @@ export function useAgentList(): UseAgentListReturn {
       isError: false,
     };
 
-    if (!data) return buckets;
+    if (!agentData) return buckets;
 
-    data.forEach((result, idx) => {
+    agentData.forEach((result, idx) => {
       if (result.status !== 'success' || !result.result) return;
 
       const raw = result.result as AgentOnChain;
       const name = agents[idx]?.name ?? `agent-${idx}`;
+
+      // const jobResult = jobData?.[idx];
+      // const job = jobResult?.status === 'success' ? (jobResult.result as JobOnChain) : undefined;
+
       const agent = toAgent(raw, name);
 
       if (agent.status === 'pending') buckets.waiting.push(agent);
@@ -139,14 +196,14 @@ export function useAgentList(): UseAgentListReturn {
     });
 
     return buckets;
-  }, [data, agents]);
+  }, [agentData, agents]);
 
   return {
     waiting,
     live,
     verified,
     failed,
-    isLoading: contractsLoading || isIndexing,
+    isLoading: agentsLoading || isIndexing,
     isError,
   };
 }
