@@ -6,7 +6,7 @@ interface FieldLabelProps {
 
 export function FieldLabel({ children }: FieldLabelProps) {
   return (
-    <label className="block font-mono text-sm font-medium uppercase tracking-widest text-text-tertiary">
+    <label className="block font-mono text-xs font-medium uppercase tracking-widest text-text-tertiary">
       {children}
     </label>
   );

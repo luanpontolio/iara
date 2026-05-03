@@ -101,7 +101,7 @@ export function AgentCard({
         </div>
 
         <div className="px-3 pt-2.5 flex justify-center">
-          <Text variant="code" color="info" className="text-[11px] tracking-wide">
+          <Text variant="code" color="info" className="text-xs tracking-wide">
             Started {agent.elapsedTime ?? '—'} ago
           </Text>
         </div>
@@ -109,7 +109,7 @@ export function AgentCard({
         {renderGauge(scoreNum, '#5C9EE8')}
 
         <div className="flex justify-center px-3 pt-1">
-          <Text variant="code" color="muted" className="text-[10px] tracking-wide">
+          <Text variant="code" color="muted" className="text-xs tracking-wide">
             {agent.tests} tests
           </Text>
         </div>
@@ -133,7 +133,7 @@ export function AgentCard({
       <div className="flex items-center justify-center gap-1 px-3 pt-1.5 relative">
         <Text
           variant="code"
-          className="text-[11px] font-medium tracking-wide"
+          className="text-xs font-medium tracking-wide"
           style={{ color }}
         >
           {agent.score}

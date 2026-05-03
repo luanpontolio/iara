@@ -25,12 +25,12 @@ export function HomePage() {
         title="FORO"
         onLogoClick={() => router.push('/app')}
         centerAction={
-          <Button variant="primary" size="md" onClick={() => router.push('/agent/new')}>
+          <Button variant="primary" size="sm" className="text-xl" onClick={() => router.push('/agent/new')}>
             Request a Foro
           </Button>
         }
         actions={
-          <Button variant="ghost" size="md">
+          <Button variant="ghost" size="sm" className="text-xl">
             Register as Keeper
           </Button>
         }

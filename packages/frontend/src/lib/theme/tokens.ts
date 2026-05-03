@@ -90,7 +90,7 @@ export const typography = {
   },
   
   fontSize: {
-    xs: '0.625rem',   // 10px
+    xs: '0.8125rem',  // 13px
     sm: '1rem',        // 16px
     base: '1.125rem', // 18px
     md: '0.8125rem',  // 13px
