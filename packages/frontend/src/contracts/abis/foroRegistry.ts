@@ -39,6 +39,61 @@ export const FORO_REGISTRY_ABI = [
     outputs: [{ name: 'foroId', type: 'uint256' }],
   },
   {
+    name: 'getLatestTestJobId',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'agentId', type: 'uint256' }],
+    outputs: [{ name: 'jobId', type: 'uint256' }],
+  },
+  {
+    name: 'getTestJob',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'jobId', type: 'uint256' }],
+    outputs: [
+      {
+        type: 'tuple',
+        components: [
+          { name: 'foroId', type: 'uint256' },
+          { name: 'agentId', type: 'uint256' },
+          { name: 'requester', type: 'address' },
+          { name: 'testFee', type: 'uint256' },
+          { name: 'keeperAddress', type: 'address' },
+          { name: 'keeperStake', type: 'uint256' },
+          { name: 'commitHash', type: 'bytes32' },
+          { name: 'commitTimestamp', type: 'uint256' },
+          { name: 'revealTimestamp', type: 'uint256' },
+          { name: 'status', type: 'uint8' },
+          { name: 'contestationDeadline', type: 'uint256' },
+        ],
+      },
+    ],
+  },
+  {
+    name: 'getTestResult',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'jobId', type: 'uint256' }],
+    outputs: [
+      {
+        type: 'tuple',
+        components: [
+          { name: 'foroId', type: 'uint256' },
+          { name: 'score', type: 'uint256' },
+          { name: 'latencyScore', type: 'uint256' },
+          { name: 'qualityScore', type: 'uint256' },
+          { name: 'avgLatencyMs', type: 'uint256' },
+          { name: 'rounds', type: 'uint256' },
+          { name: 'chatId', type: 'bytes32' },
+          { name: 'teeProof', type: 'bytes' },
+          { name: 'teeVerified', type: 'bool' },
+          { name: 'submissionTimestamp', type: 'uint256' },
+          { name: 'finalized', type: 'bool' },
+        ],
+      },
+    ],
+  },
+  {
     name: 'AgentRegistered',
     type: 'event',
     inputs: [

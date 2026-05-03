@@ -6,14 +6,14 @@ export interface RegisteredAgent {
 }
 
 export const REGISTERED_AGENTS: RegisteredAgent[] = [
-  // { foroId: 8n, name: 'agent-uni' },
-  // { foroId: 9n, name: 'agent-makerdao' },
-  // { foroId: 10n, name: 'agent-aave' },
-  // { foroId: 11n, name: 'agent-compound' },
-  // { foroId: 12n, name: 'agent-curve' },
-  // { foroId: 13n, name: 'agent-lido' },
-  // { foroId: 14n, name: 'agent-yearn' },
-  // { foroId: 15n, name: 'agent-balancer' },
-  // { foroId: 16n, name: 'agent-frax' },
-  // { foroId: 17n, name: 'agent-convex' },
+  { foroId: 1n, name: 'agent-uni' },
+  { foroId: 2n, name: 'agent-makerdao' },
+  { foroId: 3n, name: 'agent-aave' },
+  { foroId: 4n, name: 'agent-compound' },
+  { foroId: 5n, name: 'agent-curve' },
+  { foroId: 6n, name: 'agent-lido' },
+  { foroId: 7n, name: 'agent-yearn' },
+  { foroId: 8n, name: 'agent-balancer' },
+  { foroId: 9n, name: 'agent-frax' },
+  { foroId: 10n, name: 'agent-convex' },
 ];

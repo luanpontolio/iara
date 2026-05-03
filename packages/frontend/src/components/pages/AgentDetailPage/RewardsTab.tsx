@@ -7,22 +7,36 @@ import { cn } from '@/lib/utils/styles';
 
 export function RewardsTab({ agent }: { agent: ForoDetailAgent }) {
   const rawFee = parseFloat((agent.testFee ?? '0').replace(/[^0-9.]/g, ''));
-  const stake = rawFee * 2;
-  const earned = rawFee * 0.7;
   const currency = (agent.testFee ?? '').split(' ').pop() || '0G';
-  const fmt = (n: number) => `${n.toFixed(2)} ${currency}`;
+  const fmt = (n: number) => `${n.toFixed(4)} ${currency}`;
 
   const isSettled = agent.phase === 'settled';
   const isFailed = agent.badgeStatus === 'failed';
 
+  // Prefer on-chain pre-computed values; fall back to client-side calculation.
+  const stakeDisplay = agent.stakeReturned ?? fmt(rawFee * 2);
+  const earnedDisplay = agent.keeperEarned ?? fmt(rawFee * 0.7);
+  const vaultDisplay = agent.vaultBalance;
+
   const dist = [
-    { label: 'Keeper', pct: '70%', colorClass: 'text-success', amt: fmt(rawFee * 0.7) },
+    { label: 'Keeper', pct: '70%', colorClass: 'text-success', amt: agent.keeperEarned ?? fmt(rawFee * 0.7) },
     { label: 'Creator', pct: '20%', colorClass: 'text-text-tertiary', amt: fmt(rawFee * 0.2) },
     { label: 'Protocol', pct: '10%', colorClass: 'text-text-muted', amt: fmt(rawFee * 0.1) },
   ];
 
   return (
     <div>
+      {vaultDisplay !== undefined ? (
+        <div className="flex items-baseline justify-between border-b border-border-subtle py-2.5">
+          <Text variant="bodySmall" color="muted" className="text-xs">
+            {isSettled ? 'Vault (distributed)' : 'Vault (locked)'}
+          </Text>
+          <Text variant="code" color={isSettled ? 'quaternary' : 'info'} className="text-xs">
+            {vaultDisplay}
+          </Text>
+        </div>
+      ) : null}
+
       <div className="flex items-baseline justify-between border-b border-border-subtle py-2.5">
         <Text variant="bodySmall" color="muted" className="text-xs">
           Stake {isSettled ? 'returned' : 'required (2×)'}
@@ -32,7 +46,7 @@ export function RewardsTab({ agent }: { agent: ForoDetailAgent }) {
           color={isSettled ? 'success' : 'secondary'}
           className="text-xs"
         >
-          {fmt(stake)}
+          {stakeDisplay}
           {isSettled ? ' ✓' : ''}
         </Text>
       </div>
@@ -46,7 +60,7 @@ export function RewardsTab({ agent }: { agent: ForoDetailAgent }) {
           color={isSettled ? 'success' : 'tertiary'}
           className="text-xs"
         >
-          {fmt(earned)}
+          {earnedDisplay}
           {isSettled ? ' ✓' : ''}
         </Text>
       </div>
@@ -56,7 +70,7 @@ export function RewardsTab({ agent }: { agent: ForoDetailAgent }) {
           Net P&L
         </Text>
         <Text variant="code" color="success" className="text-sm font-medium">
-          +{fmt(earned)}
+          +{earnedDisplay}
         </Text>
       </div>
 

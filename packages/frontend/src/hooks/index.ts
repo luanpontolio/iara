@@ -30,3 +30,6 @@ export type { UseAgentListReturn } from './useAgentList';
 
 export { useAgentIndexer } from './useAgentIndexer';
 export type { UseAgentIndexerReturn, IndexedAgent } from './useAgentIndexer';
+
+export { useAgentDetail } from './useAgentDetail';
+export type { UseAgentDetailReturn } from './useAgentDetail';

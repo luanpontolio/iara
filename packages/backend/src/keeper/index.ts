@@ -55,6 +55,27 @@ export class KeeperService {
   }
 
   /**
+   * Run the full keeper workflow for a single foroId and exit.
+   * Useful for one-off executions without polling.
+   */
+  async runSingleJob(foroId: bigint): Promise<void> {
+    logger.info({ foroId: foroId.toString() }, 'Running single job');
+
+    // @ts-expect-error - getAllTestJobs exists on ForoRegistry contract
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    const job = await this.contracts.foroRegistry.getTestJob(foroId);
+
+    if (!job) {
+      throw new Error(`No job found for foroId ${foroId.toString()}`);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const agentId = (job as { [k: number]: bigint })[1] as bigint;
+
+    await this.handleTestRequest(foroId, agentId);
+  }
+
+  /**
    * Stop the keeper service
    */
   stop(): void {

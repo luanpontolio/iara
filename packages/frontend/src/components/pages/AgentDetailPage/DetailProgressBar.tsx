@@ -8,7 +8,7 @@ export function DetailProgressBar({ agent }: { agent: ForoDetailAgent }) {
   let pct = 0;
 
   if (agent.phase === 'running') {
-    const [done, total] = agent.progress ?? [0, 14];
+    const [done, total] = agent.progress ?? [0, 0];
     pct = total > 0 ? (done / total) * 100 : 0;
     colorClass = 'bg-info';
   } else if (agent.phase === 'settled') {

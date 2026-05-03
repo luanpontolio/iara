@@ -13,16 +13,18 @@ import {IAgentVault} from "./interfaces/IAgentVault.sol";
  * @dev Handles agent registration, test orchestration, Keeper management, and contestation
  */
 contract ForoRegistry is IForoRegistry, Ownable, ReentrancyGuard {
-    uint256 private _nextForoId = 1;
+    uint256 private _nextAgentId = 1;
+    uint256 private _nextJobId = 1;
     uint256 private _nextContestationId = 1;
     
     mapping(uint256 => Agent) private _agents;
     mapping(uint256 => TestJob) private _testJobs;
     mapping(uint256 => TestResult) private _testResults;
     mapping(bytes32 => bool) private _registeredAgents;
-    mapping(uint256 => Contestation[]) private _contestations; // foroId => Contestations
+    mapping(uint256 => Contestation[]) private _contestations; // jobId => Contestations
     mapping(address => Keeper) private _keepers;
     mapping(address => uint256) private _pendingWithdrawals;
+    mapping(uint256 => uint256) private _latestJobIdForAgent; // agentId => latest jobId
     
     IAgentVault public immutable agentVault;
     
@@ -80,7 +82,7 @@ contract ForoRegistry is IForoRegistry, Ownable, ReentrancyGuard {
         _registeredAgents[registrationKey] = true;
         
         // Assign foroId and store Agent entity
-        foroId = _nextForoId++;
+        foroId = _nextAgentId++;
         
         _agents[foroId] = Agent({
             foroId: foroId,
@@ -103,7 +105,7 @@ contract ForoRegistry is IForoRegistry, Ownable, ReentrancyGuard {
      * @return agent The Agent struct
      */
     function getAgent(uint256 foroId) external view returns (Agent memory agent) {
-        require(foroId > 0 && foroId < _nextForoId, "Invalid foroId");
+        require(foroId > 0 && foroId < _nextAgentId, "Invalid agentId");
         return _agents[foroId];
     }
     
@@ -113,7 +115,7 @@ contract ForoRegistry is IForoRegistry, Ownable, ReentrancyGuard {
      * @return status The current AgentStatus
      */
     function getAgentStatus(uint256 foroId) external view returns (AgentStatus status) {
-        require(foroId > 0 && foroId < _nextForoId, "Invalid foroId");
+        require(foroId > 0 && foroId < _nextAgentId, "Invalid agentId");
         return _agents[foroId].status;
     }
     
@@ -127,14 +129,17 @@ contract ForoRegistry is IForoRegistry, Ownable, ReentrancyGuard {
      * @return foroId The unique ID for this test job
      */
     function requestTest(uint256 agentId) external payable returns (uint256 foroId) {
-        require(agentId > 0 && agentId < _nextForoId, "Invalid foroId");
+        require(agentId > 0 && agentId < _nextAgentId, "Invalid agentId");
         require(msg.value >= MIN_TEST_FEE, "Insufficient test fee");
         
         Agent storage agent = _agents[agentId];
         require(agent.foroId != 0, "Agent not found");
         
-        // Use same foroId counter for test jobs
-        foroId = _nextForoId++;
+        // Assign a job ID from the separate job counter
+        foroId = _nextJobId++;
+        
+        // Record the latest job ID for this agent
+        _latestJobIdForAgent[agentId] = foroId;
         
         // Create test job
         _testJobs[foroId] = TestJob({
@@ -266,9 +271,8 @@ contract ForoRegistry is IForoRegistry, Ownable, ReentrancyGuard {
 
         require(job.foroId != 0, "Job not found");
         require(job.status == JobStatus.SUBMITTED, "Job not submitted");
-        // require(block.timestamp >= job.contestationDeadline, "Contestation window active");
         require(!result.finalized, "Already finalized");
-        
+
         // Check for unresolved contestations
         if (_contestations[foroId].length > 0) {
             Contestation storage lastContestation = _contestations[foroId][_contestations[foroId].length - 1];
@@ -281,6 +285,7 @@ contract ForoRegistry is IForoRegistry, Ownable, ReentrancyGuard {
 
         // Update agent stats
         Agent storage agent = _agents[job.agentId];
+        
         _updateCumulativeScore(job.agentId, result.score, job.keeperAddress);
         agent.testCount += 1;
         _updateAgentStatus(job.agentId);
@@ -528,14 +533,14 @@ contract ForoRegistry is IForoRegistry, Ownable, ReentrancyGuard {
     // View Functions
     // ============================================
     
-    function getTestJob(uint256 foroId) external view returns (TestJob memory job) {
-        require(foroId > 0 && foroId < _nextForoId, "Invalid foroId");
-        return _testJobs[foroId];
+    function getTestJob(uint256 jobId) external view returns (TestJob memory job) {
+        require(jobId > 0 && jobId < _nextJobId, "Invalid jobId");
+        return _testJobs[jobId];
     }
     
-    function getTestResult(uint256 foroId) external view returns (TestResult memory result) {
-        require(foroId > 0 && foroId < _nextForoId, "Invalid foroId");
-        return _testResults[foroId];
+    function getTestResult(uint256 jobId) external view returns (TestResult memory result) {
+        require(jobId > 0 && jobId < _nextJobId, "Invalid jobId");
+        return _testResults[jobId];
     }
     
     function getLeaderboard(string calldata category) external view returns (uint256[] memory foroIds) {
@@ -544,14 +549,24 @@ contract ForoRegistry is IForoRegistry, Ownable, ReentrancyGuard {
         return new uint256[](0);
     }
     
-    function getContestations(uint256 foroId) external view returns (Contestation[] memory contestations) {
-        require(foroId > 0 && foroId < _nextForoId, "Invalid foroId");
-        return _contestations[foroId];
+    function getContestations(uint256 jobId) external view returns (Contestation[] memory contestations) {
+        require(jobId > 0 && jobId < _nextJobId, "Invalid jobId");
+        return _contestations[jobId];
+    }
+    
+    /**
+     * @notice Get the latest test job ID for a given agent
+     * @param agentId The Foro ID of the agent
+     * @return jobId The latest test job ID, or 0 if no test has been requested
+     */
+    function getLatestTestJobId(uint256 agentId) external view returns (uint256 jobId) {
+        require(agentId > 0 && agentId < _nextAgentId, "Invalid agentId");
+        return _latestJobIdForAgent[agentId];
     }
     
     function getAllTestJobs() external view returns (TestJob[] memory jobs) {
         uint256 count = 0;
-        for (uint256 i = 1; i < _nextForoId; i++) {
+        for (uint256 i = 1; i < _nextJobId; i++) {
             if (_testJobs[i].foroId != 0) {
                 count++;
             }
@@ -559,7 +574,7 @@ contract ForoRegistry is IForoRegistry, Ownable, ReentrancyGuard {
         
         jobs = new TestJob[](count);
         uint256 index = 0;
-        for (uint256 i = 1; i < _nextForoId; i++) {
+        for (uint256 i = 1; i < _nextJobId; i++) {
             if (_testJobs[i].foroId != 0) {
                 jobs[index] = _testJobs[i];
                 index++;
@@ -668,24 +683,31 @@ contract ForoRegistry is IForoRegistry, Ownable, ReentrancyGuard {
     }
     
     /**
-     * @dev Update agent status based on test count and cumulative score
+     * @dev Update agent status based on cumulative score (single-keeper model)
      * @param foroId The Foro ID of the agent
      */
     function _updateAgentStatus(uint256 foroId) internal {
         Agent storage agent = _agents[foroId];
-        
-        // Status transitions based on test count and score
+
         if (agent.testCount == 0) {
             agent.status = AgentStatus.PENDING;
-        } else if (agent.testCount <= 2) {
-            agent.status = AgentStatus.PROBATION;
-        } else if (agent.testCount >= 3 && agent.cumulativeScore < 4000) { // < 40.00
-            agent.status = AgentStatus.FAILED;
-        } else if (agent.testCount >= 10 && agent.cumulativeScore >= 8000) { // >= 80.00
-            agent.status = AgentStatus.ELITE;
-        } else if (agent.testCount >= 3 && agent.cumulativeScore >= 6000) { // >= 60.00
-            agent.status = AgentStatus.VERIFIED;
+            return;
         }
+
+        uint256 score = agent.cumulativeScore;
+        AgentStatus newStatus;
+
+        if (score >= 8000) {          // >= 80.00
+            newStatus = AgentStatus.ELITE;
+        } else if (score >= 6000) {   // >= 60.00
+            newStatus = AgentStatus.VERIFIED;
+        } else if (score >= 4000) {   // >= 40.00
+            newStatus = AgentStatus.PROBATION;
+        } else {                      // < 40.00
+            newStatus = AgentStatus.FAILED;
+        }
+
+        agent.status = newStatus;
     }
     
     /**
@@ -705,7 +727,6 @@ contract ForoRegistry is IForoRegistry, Ownable, ReentrancyGuard {
             uint256 keeperWeight = this.getKeeperWeight(keeperAddress);
             
             // Weighted average: (oldScore * oldWeight + newScore * newWeight) / totalWeight
-            // Simplified: treat all previous tests as having equal combined weight
             uint256 oldWeight = agent.testCount;
             uint256 totalScore = (agent.cumulativeScore * oldWeight) + (newScore * keeperWeight);
             agent.cumulativeScore = totalScore / (oldWeight + keeperWeight);
