@@ -29,7 +29,7 @@ export function FieldInput({ value, onChange, placeholder, disabled, className }
       disabled={disabled}
       className={cn(
         'w-full rounded-md border border-border-default bg-bg-secondary px-3 py-2',
-        'font-mono text-sm text-text-primary placeholder:text-text-muted',
+        'font-mono text-base text-text-primary placeholder:text-text-muted',
         'focus:border-accent focus:outline-none',
         'disabled:cursor-not-allowed disabled:opacity-50',
         className
@@ -55,7 +55,7 @@ export function FieldTextarea({ value, onChange, placeholder, disabled }: FieldT
       rows={8}
       className={cn(
         'w-full rounded-md border border-border-default bg-bg-secondary px-3 py-2',
-        'font-mono text-sm text-text-primary placeholder:text-text-muted',
+        'font-mono text-base text-text-primary placeholder:text-text-muted',
         'focus:border-accent focus:outline-none',
         'disabled:cursor-not-allowed disabled:opacity-50',
         'resize-none'

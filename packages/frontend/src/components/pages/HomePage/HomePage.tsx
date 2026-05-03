@@ -25,16 +25,16 @@ export function HomePage() {
     <div className="flex h-screen flex-col overflow-hidden bg-bg-primary">
       <Header
         title="FORO"
-        onLogoClick={() => router.push('/')}
+        onLogoClick={() => router.push('/app')}
+        centerAction={
+          <Button variant="primary" size="sm" className="text-xl" onClick={() => router.push('/agent/new')}>
+            Request a Foro
+          </Button>
+        }
         actions={
-          <>
-            <Button variant="ghost" size="md">
-              Register as Keeper
-            </Button>
-            <Button variant="primary" size="md" onClick={() => router.push('/agent/new')}>
-              Verify my agent
-            </Button>
-          </>
+          <Button variant="ghost" size="sm" className="text-xl">
+            Register as Keeper
+          </Button>
         }
         className="border-b border-border-subtle"
       />
@@ -64,7 +64,7 @@ export function HomePage() {
                       key={a.id}
                       agent={a}
                       variant="waiting"
-                      onClick={() => router.push(`/${a.id}`)}
+                      onClick={() => router.push(`/app/foro/${a.id}`)}
                     />
                   ))}
                 </div>
@@ -87,9 +87,14 @@ export function HomePage() {
               <ColumnCount count={live.length} label={`${pluralize(live.length, 'agent')} running`} />
             </div>
             <div className="scrollbar-thin flex flex-1 flex-col gap-2 overflow-y-auto px-5 pb-6">
+<<<<<<< HEAD
               {isLoading && <span className="px-1 text-xs text-text-tertiary">Loading…</span>}
               {live.map(a => (
                 <AgentCard key={a.id} agent={a} variant="live" onClick={() => router.push(`/${a.id}`)} />
+=======
+              {HOME_LIVE.map(a => (
+                <AgentCard key={a.id} agent={a} variant="live" onClick={() => router.push(`/app/foro/${a.id}`)} />
+>>>>>>> origin/design-system
               ))}
             </div>
           </div>
@@ -122,7 +127,7 @@ export function HomePage() {
                         key={a.id}
                         agent={a}
                         variant="result"
-                        onClick={() => router.push(`/${a.id}`)}
+                        onClick={() => router.push(`/app/foro/${a.id}`)}
                       />
                     ))}
                   </div>
@@ -135,7 +140,7 @@ export function HomePage() {
                             key={a.id}
                             agent={a}
                             variant="result"
-                            onClick={() => router.push(`/${a.id}`)}
+                            onClick={() => router.push(`/app/foro/${a.id}`)}
                           />
                         ))}
                       </div>

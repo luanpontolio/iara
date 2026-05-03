@@ -43,9 +43,10 @@ const buttonVariants = createVariants({
       ),
     },
     size: {
-      sm: 'px-3 py-1.5 text-xs',
-      md: 'px-4 py-2 text-sm',
+      sm: 'px-3 py-1.5 text-sm',
+      md: 'px-4 py-2 text-base',
       lg: 'px-6 py-3 text-base',
+      xl: 'px-8 py-4 text-xl tracking-wide',
     },
   },
   defaultVariants: {
@@ -56,7 +57,7 @@ const buttonVariants = createVariants({
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   children: React.ReactNode;
   asChild?: boolean;
 }

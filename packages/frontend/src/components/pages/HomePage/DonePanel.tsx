@@ -12,12 +12,12 @@ export function DonePanel({ onClose }: { onClose: () => void }) {
   return (
     <div className="flex flex-col gap-6 px-6 py-7">
       <div>
-        <Text variant="label" color="secondary" className="mb-3 text-[13px] normal-case tracking-normal font-medium">
+        <Text variant="label" color="secondary" className="mb-3 text-sm normal-case tracking-normal font-medium">
           How it works
         </Text>
         <div className="flex flex-col gap-1.5">
           {LINES.map((line, i) => (
-            <Text key={i} variant="caption" color="muted" className="leading-relaxed text-[13px]">
+            <Text key={i} variant="caption" color="muted" className="leading-relaxed text-sm">
               {line}
             </Text>
           ))}
@@ -25,10 +25,10 @@ export function DonePanel({ onClose }: { onClose: () => void }) {
       </div>
 
       <div>
-        <Text variant="label" color="secondary" className="mb-3 text-[13px] normal-case tracking-normal font-medium">
+        <Text variant="label" color="secondary" className="mb-3 text-sm normal-case tracking-normal font-medium">
           Why it matters
         </Text>
-        <Text variant="caption" color="muted" className="leading-relaxed text-[13px]">
+        <Text variant="caption" color="muted" className="leading-relaxed text-sm">
           There is a missing piece on ERC-8004 today — no decentralised mechanism exists to evaluate agents at
           runtime. Foro closes that gap with a permissionless, economically incentivised verification layer.
         </Text>

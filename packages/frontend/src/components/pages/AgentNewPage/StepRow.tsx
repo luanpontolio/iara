@@ -59,7 +59,7 @@ export function StepRow({ step, index }: StepRowProps) {
       </div>
       <span
         className={cn(
-          'font-mono text-xs',
+          'font-mono text-sm',
           step.status === 'idle' && 'text-text-muted',
           step.status === 'pending' && 'text-text-primary',
           step.status === 'done' && 'text-text-secondary',
@@ -73,7 +73,7 @@ export function StepRow({ step, index }: StepRowProps) {
           href={`${process.env.NEXT_PUBLIC_CHAIN_EXPLORER}/txns/${step.txHash}/overview`}
           target="_blank"
           rel="noopener noreferrer"
-          className="ml-auto font-mono text-[10px] text-text-muted underline hover:text-text-secondary"
+          className="ml-auto font-mono text-sm text-text-muted underline hover:text-text-secondary"
         >
           {step.txHash.slice(0, 8)}…
         </a>

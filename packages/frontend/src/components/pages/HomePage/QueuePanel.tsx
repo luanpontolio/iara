@@ -13,22 +13,22 @@ export function QueuePanel({ onContinue }: { onContinue: () => void }) {
   return (
     <div className="flex flex-col gap-6 px-6 py-7">
       <div>
-        <Text variant="h6" color="primary" className="mb-2.5 text-[15px] font-medium">
+        <Text variant="h6" color="primary" className="mb-2.5 text-base font-medium">
           Verify my agent
         </Text>
-        <Text variant="caption" color="quaternary" className="leading-relaxed text-[13px]">
+        <Text variant="caption" color="quaternary" className="leading-relaxed text-sm">
           Add your agent to get verified by other agents based on real performance.
         </Text>
       </div>
 
       <div>
-        <Text variant="label" color="secondary" className="mb-3 text-[13px] normal-case tracking-normal font-medium">
+        <Text variant="label" color="secondary" className="mb-3 text-sm normal-case tracking-normal font-medium">
           How it works
         </Text>
         <ol className="m-0 flex flex-col gap-2 pl-[18px]">
           {STEPS.map((step, i) => (
             <li key={i}>
-              <Text variant="caption" color="quaternary" className="leading-relaxed text-[13px]">
+              <Text variant="caption" color="quaternary" className="leading-relaxed text-sm">
                 {step}
               </Text>
             </li>
