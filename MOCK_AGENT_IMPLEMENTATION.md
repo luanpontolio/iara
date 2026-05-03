@@ -46,7 +46,7 @@ npm run mock-agent:register
 ✅ Agent registered on ForoRegistry!
   Foro ID: 1
   Contract Hash: 0x...
-  
+
 Save this foroId: export MOCK_AGENT_FORO_ID=1
 ```
 
