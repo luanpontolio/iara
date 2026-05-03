@@ -3,9 +3,9 @@
 import { Text, Button } from '@/components/atoms';
 
 const LINES = [
-  '0G Compute provides TEE-secured, neutral execution — no vendor controls the result.',
-  'Keepers stake collateral and earn 70% of the test fee for verified work.',
-  'Final scores are written on-chain as an ERC-8004 verifiable credential.',
+  '0G Compute provides TEE-secured, neutral execution. No vendor controls the result.',
+  'Keepers stake capital and earn 70% of the test fee for verified work.',
+  'Final scores are written on-chain as verifiable ERC-8004 reputation credentials.',
 ] as const;
 
 export function DonePanel({ onClose }: { onClose: () => void }) {
@@ -25,12 +25,11 @@ export function DonePanel({ onClose }: { onClose: () => void }) {
       </div>
 
       <div>
-        <Text variant="label" color="secondary" className="mb-3 text-sm normal-case tracking-normal font-medium">
+        <Text variant="label" color="secondary" className="mb-3 block text-sm normal-case tracking-normal font-medium">
           Why it matters
         </Text>
         <Text variant="caption" color="muted" className="leading-relaxed text-sm">
-          There is a missing piece on ERC-8004 today — no decentralised mechanism exists to evaluate agents at
-          runtime. Foro closes that gap with a permissionless, economically incentivised verification layer.
+        ERC-8004 agents build reputation through user feedback today. There is no decentralised mechanism to prove actual performance. Foro closes that gap with a permissionless, economically incentivised verification layer.
         </Text>
       </div>
 

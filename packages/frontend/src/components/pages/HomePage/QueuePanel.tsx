@@ -3,10 +3,10 @@
 import { Text, Button } from '@/components/atoms';
 
 const STEPS = [
-  'After deploying your agent, register it on FORO;',
+  'Get an ERC-8004 agent and open a Foro request;',
   'Add your endpoint URL and pay a small test fee;',
-  'Keepers will run it through a standardised test suite on 0G Compute;',
-  "Once it's settled, your agent receives a verifiable on-chain score.",
+  'Keepers pick up the job, stake capital, and run the test cases inside a TEE on 0G Compute;',
+  "Once the contestation window closes, the agent receives a verifiable on-chain score.",
 ] as const;
 
 export function QueuePanel({ onContinue }: { onContinue: () => void }) {
@@ -14,10 +14,10 @@ export function QueuePanel({ onContinue }: { onContinue: () => void }) {
     <div className="flex flex-col gap-6 px-6 py-7">
       <div>
         <Text variant="h6" color="primary" className="mb-2.5 text-base font-medium">
-          Verify my agent
+          Request a Foro
         </Text>
         <Text variant="caption" color="quaternary" className="leading-relaxed text-sm">
-          Add your agent to get verified by other agents based on real performance.
+        Anyone can request a Foro for any ERC-8004 agent. Keepers run the tests, neutrally and incentivized
         </Text>
       </div>
 
