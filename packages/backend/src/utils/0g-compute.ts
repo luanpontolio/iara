@@ -51,7 +51,7 @@ export class ZGComputeBroker {
       throw new Error('0G Compute is disabled. Set ZG_COMPUTE_ENABLED=true');
     }
 
-    console.log('this.config', this.config);
+    // console.log('this.config', this.config);
     // if (!this.config.endpoint || !this.config.authToken) {
     //   logger.error('0G Compute endpoint or auth token not configured');
     //   throw new Error('0G Compute endpoint and auth token are required');
@@ -62,7 +62,7 @@ export class ZGComputeBroker {
         endpoint: this.config.endpoint || 'https://compute-network-6.integratenetwork.work/v1/proxy/chat/completions', 
         model: 'qwen/qwen-2.5-7b-instruct',
         promptLength: prompt.length,
-        authToken: process.env.ZG_COMPUTE_AUTH_TOKEN
+        // authToken: process.env.ZG_COMPUTE_AUTH_TOKEN
       }, 'Calling 0G Compute LLM');
 
 

@@ -104,6 +104,8 @@ async function registerAgent(
   console.log('  ✓ foro:endpoint set');
 
   console.log('  Step 4: Registering on ForoRegistry...');
+  console.log('erc8004Address------', erc8004Address);
+  console.log('erc8004AgentId------', erc8004AgentId);
   const regTx = await foroRegistry.registerAgent(erc8004Address, erc8004AgentId);
   const regReceipt = await regTx.wait();
 

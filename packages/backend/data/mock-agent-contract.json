@@ -51,6 +51,19 @@
           "Summary is objective and factual"
         ]
       }
+    },
+    {
+      "id": "tc-03",
+      "description": "Summarize a blog post",
+      "input": {
+        "url": "https://blog.0g.ai/"
+      },
+      "evaluation": {
+        "criteria": [
+          "Summary identifies the main point",
+          "Summary is objective and factual"
+        ]
+      }
     }
   ]
 }
