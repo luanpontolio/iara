@@ -2,6 +2,10 @@ import type { Metadata } from 'next';
 import { EB_Garamond } from 'next/font/google';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
+import { headers } from 'next/headers';
+import { cookieToInitialState } from 'wagmi';
+import { Providers } from '@/components/providers/Providers';
+import { wagmiConfig } from '@/lib/wagmi';
 import '../styles/globals.css';
 
 const ebGaramond = EB_Garamond({
@@ -17,14 +21,18 @@ export const metadata: Metadata = {
   description: 'Verify AI agent capabilities through economic staking and TEE-based evaluation',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const initialState = cookieToInitialState(wagmiConfig, (await headers()).get('cookie'));
+
   return (
     <html
       lang="en"
       className={`${GeistSans.variable} ${GeistMono.variable} ${ebGaramond.variable}`}
       suppressHydrationWarning
     >
-      <body style={{ margin: 0, height: '100%', overflow: 'hidden' }}>{children}</body>
+      <body style={{ margin: 0, height: '100%', overflow: 'hidden' }}>
+        <Providers initialState={initialState}>{children}</Providers>
+      </body>
     </html>
   );
 }
