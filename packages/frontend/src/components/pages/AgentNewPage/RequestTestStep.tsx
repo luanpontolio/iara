@@ -32,10 +32,10 @@ export function RequestTestStep({ foroId }: RequestTestStepProps) {
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
-          <span className="font-mono text-sm text-text-primary">Test requested successfully</span>
+          <span className="font-mono text-base text-text-primary">Test requested successfully</span>
         </div>
 
-        <div className="rounded-md border border-border-subtle bg-bg-secondary px-4 py-3 font-mono text-xs text-text-secondary space-y-1.5">
+        <div className="rounded-md border border-border-subtle bg-bg-secondary px-4 py-3 font-mono text-sm text-text-secondary space-y-1.5">
           <div className="flex gap-2">
             <span className="text-text-muted">Foro ID</span>
             <span>{foroId.toString()}</span>
@@ -59,7 +59,7 @@ export function RequestTestStep({ foroId }: RequestTestStepProps) {
           </div>
         </div>
 
-        <p className="font-mono text-xs text-text-muted">
+        <p className="font-mono text-sm text-text-muted">
           A keeper will claim the job, run the evaluation, and submit results on-chain.
         </p>
       </div>
@@ -85,13 +85,13 @@ export function RequestTestStep({ foroId }: RequestTestStepProps) {
           placeholder="0.001"
           disabled={running}
         />
-        <p className="font-mono text-[11px] text-text-muted">
+        <p className="font-mono text-sm text-text-muted">
           Minimum fee paid to the keeper for running the evaluation.
         </p>
       </div>
 
       {error && (
-        <p className="rounded-md border border-error/30 bg-error/10 px-3 py-2 font-mono text-xs text-error">
+        <p className="rounded-md border border-error/30 bg-error/10 px-3 py-2 font-mono text-sm text-error">
           {error}
         </p>
       )}

@@ -66,7 +66,7 @@ export function RegisterAgentStep({ onSuccess }: RegisterAgentStepProps) {
       )}
 
       {error && (
-        <p className="rounded-md border border-error/30 bg-error/10 px-3 py-2 font-mono text-xs text-error">
+        <p className="rounded-md border border-error/30 bg-error/10 px-3 py-2 font-mono text-sm text-error">
           {error}
         </p>
       )}

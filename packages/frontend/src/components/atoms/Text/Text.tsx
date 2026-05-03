@@ -31,8 +31,8 @@ const variantStyles: Record<TextVariant, string> = {
   body: 'text-base font-sans leading-normal',
   bodyLarge: 'text-md font-sans leading-normal',
   bodySmall: 'text-sm font-sans leading-normal',
-  caption: 'text-xs font-sans leading-normal',
-  label: 'text-xs font-sans font-medium uppercase tracking-widest',
+  caption: 'text-sm font-sans leading-normal',
+  label: 'text-sm font-sans font-medium uppercase tracking-widest',
   code: 'text-base font-mono leading-relaxed',
 };
 

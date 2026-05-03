@@ -22,7 +22,7 @@ export function ColumnDivider({
         <Text
           variant="label"
           color={lit ? 'primary' : 'muted'}
-          className={cn('text-[10px] tracking-[0.08em] transition-colors duration-150')}
+          className={cn('text-sm tracking-[0.08em] transition-colors duration-150')}
         >
           {label}
         </Text>
