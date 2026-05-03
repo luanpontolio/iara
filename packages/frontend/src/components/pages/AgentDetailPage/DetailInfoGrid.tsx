@@ -29,7 +29,6 @@ function InfoCol({
 }
 
 export function DetailInfoGrid({ agent }: { agent: ForoDetailAgent }) {
-  const [done, total] = agent.progress ?? [0, 0];
   const hasKeeper = Boolean(agent.keeper);
 
   return (
@@ -46,7 +45,7 @@ export function DetailInfoGrid({ agent }: { agent: ForoDetailAgent }) {
           <div className="grid grid-cols-3">
             <InfoCol label="Started" value={agent.startedAt} />
             <InfoCol label="Keeper" value={agent.keeper} highlight />
-            <InfoCol label="Tests Done" value={`${done}/${total}`} />
+            <InfoCol label="Reward" value={agent.keeperEarned} />
           </div>
         </>
       ) : null}

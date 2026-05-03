@@ -4,24 +4,33 @@ import { Text } from '@/components/atoms';
 import type { ForoDetailAgent } from '@/lib/constants/types';
 
 export function ProofTab({ agent }: { agent: ForoDetailAgent }) {
-  if (agent.phase !== 'settled') {
-    return (
-      <div className="flex flex-col items-center gap-2 py-10">
-        <Text variant="bodySmall" color="muted" className="text-[13px]">
-          TEE proof will appear here once the test settles.
-        </Text>
-        <Text variant="code" color="disabled" className="text-[11px]">
-          chatId · enclave signature · block anchor
-        </Text>
-      </div>
-    );
-  }
+  // if (agent.phase !== 'settled') {
+  //   return (
+  //     <div className="flex flex-col items-center gap-2 py-10">
+  //       <Text variant="bodySmall" color="muted" className="text-[13px]">
+  //         TEE proof will appear here once the test settles.
+  //       </Text>
+  //       <Text variant="code" color="disabled" className="text-[11px]">
+  //         chatId · enclave signature · block anchor
+  //       </Text>
+  //     </div>
+  //   );
+  // }
 
   const rows = [
     { label: 'chatId (0G Compute)', value: agent.chatId },
-    { label: 'Block', value: agent.block },
+    {
+      label: 'TEE Verified',
+      value: agent.teeVerified !== undefined ? String(agent.teeVerified) : undefined,
+    },
+    {
+      label: 'Avg Latency',
+      value: agent.avgLatencyMs !== undefined ? `${agent.avgLatencyMs}ms` : undefined,
+    },
+    { label: 'Latency Score', value: agent.latencyScore },
+    { label: 'Quality Score', value: agent.qualityScore },
+    { label: 'Submitted', value: agent.block },
     { label: 'Network', value: '0G-Galileo-Testnet' },
-    { label: 'Verified off-chain', value: 'true' },
   ];
 
   return (

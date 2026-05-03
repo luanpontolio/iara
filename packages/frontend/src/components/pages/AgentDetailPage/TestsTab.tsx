@@ -7,37 +7,51 @@ import { cn } from '@/lib/utils/styles';
 
 export function TestsTab({ agent }: { agent: ForoDetailAgent }) {
   if (agent.phase === 'settled') {
+    const [done] = agent.progress ?? [0, 0];
     return (
-      <div className="flex flex-col gap-2">
-        {agent.rounds?.map(r => (
-          <div
-            key={r.n}
-            className="grid grid-cols-[32px_1fr_80px_80px] items-center gap-3 rounded border border-border-subtle bg-bg-tertiary px-4 py-3"
-          >
-            <Text variant="code" color="muted" className="text-[11px]">
-              {r.n}
-            </Text>
-            <Text
-              variant="code"
-              color={r.passed ? 'secondary' : 'error'}
-              className="text-xs"
-            >
-              {r.score}
-            </Text>
-            <Text variant="code" color="quaternary" className="text-xs">
-              {r.latency}
-            </Text>
-            <div className="flex justify-end">
-              <Badge variant={r.passed ? 'verified' : 'failed'} size="xs" />
+      <div className="flex flex-col gap-3">
+        <div className="rounded border border-border-subtle bg-bg-tertiary px-4 py-4">
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div className="flex flex-col items-center gap-1.5">
+              <Text variant="label" color="muted" className="text-[10px] tracking-widest">
+                TESTS RUN
+              </Text>
+              <Text variant="code" color="secondary" className="text-sm">
+                {done}/{done}
+              </Text>
+            </div>
+            <div className="flex flex-col items-center gap-1.5">
+              <Text variant="label" color="muted" className="text-[10px] tracking-widest">
+                SCORE
+              </Text>
+              <Text variant="code" color="primary" className="text-sm">
+                {agent.score ?? '—'}
+              </Text>
+            </div>
+            <div className="flex flex-col items-center gap-1.5">
+              <Text variant="label" color="muted" className="text-[10px] tracking-widest">
+                RESULT
+              </Text>
+              <Badge variant={agent.badgeStatus} size="xs" />
             </div>
           </div>
-        ))}
+        </div>
+        {agent.avgLatencyMs !== undefined && (
+          <div className="flex items-baseline justify-between border-b border-border-subtle py-2.5">
+            <Text variant="bodySmall" color="muted" className="text-xs">
+              Avg latency
+            </Text>
+            <Text variant="code" color="tertiary" className="text-xs">
+              {agent.avgLatencyMs}ms
+            </Text>
+          </div>
+        )}
       </div>
     );
   }
 
   if (agent.phase === 'running') {
-    const [done, total] = agent.progress ?? [0, 14];
+    const [done, total] = agent.progress ?? [0, 0];
     return (
       <div className="flex flex-col gap-1.5">
         {Array.from({ length: total }, (_, i) => {
@@ -80,30 +94,6 @@ export function TestsTab({ agent }: { agent: ForoDetailAgent }) {
     );
   }
 
-  return (
-    <div className="flex flex-col gap-2">
-      {agent.testCases?.map(tc => (
-        <div
-          key={tc.id}
-          className="rounded border border-border-subtle bg-bg-tertiary py-3.5"
-        >
-          <div className="mb-2 flex items-baseline gap-2 px-3.5">
-            <Text variant="code" color="muted" className="text-[10px]">
-              {tc.id}
-            </Text>
-            <Text variant="bodySmall" color="secondary" className="text-xs">
-              {tc.description}
-            </Text>
-          </div>
-          <div className="flex flex-col gap-1 px-3.5">
-            {tc.criteria.map((c, idx) => (
-              <Text key={idx} variant="bodySmall" color="muted" className="text-[11px]">
-                · {c}
-              </Text>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+  // Queued phase — test cases are shown above the tabs
+  return null;
 }
