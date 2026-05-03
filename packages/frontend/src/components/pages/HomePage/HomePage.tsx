@@ -23,16 +23,16 @@ export function HomePage() {
     <div className="flex h-screen flex-col overflow-hidden bg-bg-primary">
       <Header
         title="FORO"
-        onLogoClick={() => router.push('/')}
+        onLogoClick={() => router.push('/app')}
+        centerAction={
+          <Button variant="primary" size="md">
+            Request a Foro
+          </Button>
+        }
         actions={
-          <>
-            <Button variant="ghost" size="md">
-              Register as Keeper
-            </Button>
-            <Button variant="primary" size="md">
-              Verify my agent
-            </Button>
-          </>
+          <Button variant="ghost" size="md">
+            Register as Keeper
+          </Button>
         }
         className="border-b border-border-subtle"
       />
