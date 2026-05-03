@@ -97,7 +97,7 @@ function AgentDetailBody({ agent }: { agent: ForoDetailAgent }) {
   );
 
   const gauge = gaugePropsFor(agent);
-  const { color, meaning } = useAgentStatus({ status: agent.badgeStatus, score: agent.score });
+  const { color, meaning } = useAgentStatus({ status: agent.badgeStatus, score: agent.score ?? 0 });
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-bg-primary">

@@ -18,7 +18,6 @@ import { ZGComputeBroker } from '../utils/0g-compute.js';
 import {
   AgentContract,
   executeAllTestCases,
-  ExecutionResult,
 } from './executor.js';
 import { judgeAgentOutput, calculateAverageQualityScore } from './judge.js';
 import logger from '../utils/logger.js';
@@ -61,7 +60,7 @@ export class KeeperService {
   async finalizeJob(foroId: bigint): Promise<void> {
     logger.info({ foroId: foroId.toString() }, 'Finalizing result');
 
-    const finalizeTx = await this.contracts.foroRegistry.finalizeResult(foroId);
+    const finalizeTx = await this.contracts.foroRegistry.finalizeResult!(foroId);
     if (!finalizeTx) {
       throw new Error('Failed to create finalize transaction');
     }
@@ -197,15 +196,15 @@ export class KeeperService {
 
     try {
       // 1. Fetch agent details
-      const agent = await this.contracts.foroRegistry.getAgent(agentId);
-      const erc8004 = createERC8004Contract(agent.erc8004Address, this.contracts.provider);
+      const agent = await this.contracts.foroRegistry.getAgent!(agentId);
+      const erc8004 = createERC8004Contract(agent.erc8004Address as string, this.contracts.provider);
 
       // 2. Fetch Agent Contract metadata
-      const metadataBytes = await erc8004.getMetadata(agent.erc8004AgentId, 'foro:contract');
-      const agentContract: AgentContract = JSON.parse(ethers.toUtf8String(metadataBytes));
+      const metadataBytes = await erc8004.getMetadata!(agent.erc8004AgentId, 'foro:contract');
+      const agentContract: AgentContract = JSON.parse(ethers.toUtf8String(metadataBytes as Uint8Array));
 
       // 3. Fetch agent endpoint
-      const endpointBytes = await erc8004.getMetadata(agent.erc8004AgentId, 'foro:endpoint');
+      const endpointBytes = await erc8004.getMetadata!(agent.erc8004AgentId, 'foro:endpoint');
       const agentEndpoint = ethers.toUtf8String(endpointBytes);
 
       logger.info({ agentEndpoint, testCases: agentContract.testCases.length }, 'Agent contract loaded');
@@ -222,13 +221,13 @@ export class KeeperService {
       );
       
       // 5. Claim job with stake
-      const testJob = await this.contracts.foroRegistry.getTestJob(foroId);
+      const testJob = await this.contracts.foroRegistry.getTestJob!(foroId);
       logger.info({ testJob }, 'testJob fetched');
       const requiredStake = testJob.testFee * BigInt(2);
       
       logger.info({ foroId: foroId.toString(), stake: ethers.formatEther(requiredStake) }, 'Claiming job');
       
-      const claimTx = await this.contracts.foroRegistry.claimJob(foroId, commitHash, {
+      const claimTx = await this.contracts.foroRegistry.claimJob!(foroId, commitHash, {
         value: requiredStake,
       });
       await claimTx.wait(this.config.blockConfirmations);
@@ -238,7 +237,7 @@ export class KeeperService {
       // 6. Reveal test inputs first (before execution)
       logger.info({ foroId: foroId.toString() }, 'Revealing test inputs');
       
-      const revealTx = await this.contracts.foroRegistry.revealTestInputs(
+      const revealTx = await this.contracts.foroRegistry.revealTestInputs!(
         foroId,
         testCasesJSON,
         salt
@@ -264,7 +263,7 @@ export class KeeperService {
         
         // 8. Judge outputs with TEE
         const judgeResults = [];
-        const criteria = agentContract.testCases[0]?.['evaluation']?.['criteria'] || [];
+        const criteria = agentContract.testCases[0]?.evaluation?.criteria ?? [];
         
         for (const executionResult of executionResults) {
           if (!executionResult.success) continue;
@@ -313,7 +312,7 @@ export class KeeperService {
           chatId,
         }, 'Submitting result');
         
-        const submitTx = await this.contracts.foroRegistry?.submitResult?.(
+        const submitTx = await this.contracts.foroRegistry.submitResult!(
           foroId,
           compositeScore,
           Math.round(avgLatencyMs),
@@ -363,7 +362,7 @@ export class KeeperService {
         
         logger.warn({ foroId: foroId.toString(), failureReason }, 'Submitting failed test result');
         
-        const failTx = await this.contracts.foroRegistry.submitTestFailed(
+        const failTx = await this.contracts.foroRegistry.submitTestFailed!(
           foroId,
           failureReason,
           errorMessage.substring(0, 200) // Truncate error details
@@ -373,7 +372,7 @@ export class KeeperService {
         logger.info({ foroId: foroId.toString(), txHash: failTx.hash }, 'Failed test submitted');
         
         // Finalize failure immediately (no contestation window for failures)
-        const finalizeFailTx = await this.contracts.foroRegistry.finalizeTestFailure(foroId);
+        const finalizeFailTx = await this.contracts.foroRegistry.finalizeTestFailure!(foroId);
         await finalizeFailTx.wait(this.config.blockConfirmations);
         
         logger.info({ foroId: foroId.toString(), txHash: finalizeFailTx.hash }, 'Test failure finalized');
@@ -420,85 +419,5 @@ export class KeeperService {
     return 100 - (excess / range) * 100;
   }
   
-  /**
-   * Monitor for committed jobs that exceeded reveal timeout and forfeit their stakes
-   * Runs as a background job every 5 minutes
-   */
-  private startForfeitMonitoring(): void {
-    const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
-    const REVEAL_TIMEOUT_SECONDS = 3600; // 1 hour
-
-    const monitor = async () => {
-      if (!this.isRunning) return;
-
-      try {
-        // Get all test jobs directly from contract
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-        // @ts-expect-error - getAllTestJobs exists on ForoRegistry contract
-        const allJobs = await this.contracts.foroRegistry.getAllTestJobs();
-
-        logger.info({ jobCount: (allJobs as unknown[] | undefined)?.length || 0 }, 'Checking for expired committed jobs');
-
-        // Job is Result array: [foroId, agentId, requester, testFee, keeperAddress, status, commitHash, commitTimestamp, score, latency, rounds]
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        for (const job of allJobs) {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          const foroId = job[0] as bigint;
-
-          try {
-            // Check if job is still in COMMITTED state (JobStatus.COMMITTED = 1)
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            const status = job[5] as bigint;
-            if (status !== 1n) {
-              continue;
-            }
-
-            // Check if reveal timeout has passed
-            const currentTimestamp = Math.floor(Date.now() / 1000);
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            const commitTimestamp = Number(job[7] as bigint);
-            const timeElapsed = currentTimestamp - commitTimestamp;
-            
-            if (timeElapsed > REVEAL_TIMEOUT_SECONDS) {
-              logger.warn(
-                {
-                  foroId: foroId.toString(),
-                  timeElapsed,
-                  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                  keeperAddress: job[4] as string,
-                },
-                'Forfeiting stake for expired job'
-              );
-              
-              // Call forfeitStake to slash the unresponsive keeper
-              const forfeitTx = await this.contracts.foroRegistry.forfeitStake(foroId);
-              await forfeitTx.wait(this.config.blockConfirmations);
-              
-              logger.info(
-                { foroId: foroId.toString(), txHash: forfeitTx.hash },
-                'Stake forfeited successfully'
-              );
-            }
-          } catch (error) {
-            // Log but don't stop monitoring other jobs
-            logger.error(
-              { error, foroId: foroId.toString() },
-              'Error checking job for forfeit'
-            );
-          }
-        }
-      } catch (error) {
-        logger.error({ error }, 'Error in forfeit monitoring');
-      }
-      
-      // Schedule next check
-      if (this.isRunning) {
-        setTimeout(monitor, CHECK_INTERVAL_MS);
-      }
-    };
-    
-    // Start monitoring
-    logger.info('Starting forfeit stake monitoring');
-    setTimeout(monitor, CHECK_INTERVAL_MS); // First check after 5 minutes
-  }
 }
+

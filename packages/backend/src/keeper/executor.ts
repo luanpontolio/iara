@@ -10,6 +10,7 @@ export interface TestCase {
   id: string;
   description: string;
   input: Record<string, unknown>;
+  evaluation?: { criteria: string[] };
 }
 
 export interface ExecutionResult {
