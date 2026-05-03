@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { GaugeChart } from '@/components/organisms';
 import { Text } from '@/components/atoms';
+import { useAgentDetail } from '@/hooks';
 import type { ForoDetailAgent, ForoTabId } from '@/lib/constants/types';
-import { FORO_AGENTS } from './data';
 import { DetailHeader } from './DetailHeader';
 import { DetailInfoGrid } from './DetailInfoGrid';
 import { TestsTab } from './TestsTab';
@@ -14,6 +14,7 @@ import { RewardsTab } from './RewardsTab';
 import { cn } from '@/lib/utils/styles';
 
 const TABS: { id: ForoTabId; label: string }[] = [
+  { id: 'test-cases', label: 'Test Cases' },
   { id: 'tests', label: 'Tests' },
   { id: 'proof', label: 'Proof' },
   { id: 'rewards', label: 'Rewards' },
@@ -21,7 +22,7 @@ const TABS: { id: ForoTabId; label: string }[] = [
 
 function gaugePropsFor(agent: ForoDetailAgent) {
   const scoreNum = agent.score ? parseFloat(agent.score) : 0;
-  const [done, total] = agent.progress ?? [0, 14];
+  const [done, total] = agent.progress ?? [0, 0];
 
   if (agent.phase === 'queued') {
     return { score: 0, status: agent.badgeStatus, showFill: false as const };
@@ -39,9 +40,21 @@ function gaugePropsFor(agent: ForoDetailAgent) {
 export function AgentDetailPage() {
   const params = useParams();
   const id = typeof params.foroId === 'string' ? params.foroId : '';
-  const agent = FORO_AGENTS[id];
+  const foroId = parseInt(id, 10);
 
-  if (!agent) {
+  const { agent, isLoading, isError } = useAgentDetail(isNaN(foroId) ? 0 : foroId);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-bg-primary">
+        <Text variant="code" color="muted" className="text-sm">
+          Loading…
+        </Text>
+      </div>
+    );
+  }
+
+  if (isError || !agent) {
     return (
       <div className="flex h-screen items-center justify-center bg-bg-primary">
         <Text variant="code" color="muted" className="text-sm">
@@ -54,12 +67,36 @@ export function AgentDetailPage() {
   return <AgentDetailBody key={id} agent={agent} />;
 }
 
+function TestCasesBlock({ agentContractJson }: { agentContractJson: string | undefined }) {
+  const formatted = useMemo(() => {
+    if (!agentContractJson) return null;
+    try {
+      const contract = JSON.parse(agentContractJson) as { testCases?: unknown };
+      if (!contract.testCases) return null;
+      return JSON.stringify(contract.testCases, null, 2);
+    } catch {
+      return null;
+    }
+  }, [agentContractJson]);
+
+  if (!formatted) return null;
+
+  return (
+    <div className="overflow-hidden rounded border border-border-subtle bg-bg-tertiary">
+      <pre className="scrollbar-thin overflow-auto p-4 text-[11px] leading-relaxed text-text-secondary">
+        <code>{formatted}</code>
+      </pre>
+    </div>
+  );
+}
+
 function AgentDetailBody({ agent }: { agent: ForoDetailAgent }) {
   const [tab, setTab] = useState<ForoTabId>(() =>
-    agent.phase === 'settled' ? 'proof' : 'tests'
+    agent.phase === 'settled' ? 'proof' : 'test-cases'
   );
 
   const gauge = gaugePropsFor(agent);
+  console.log('agent------', agent);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-bg-primary">
@@ -84,32 +121,32 @@ function AgentDetailBody({ agent }: { agent: ForoDetailAgent }) {
         <div className="mb-10 w-full max-w-[540px]">
           <DetailInfoGrid agent={agent} />
         </div>
-
-        <div className="w-full max-w-[540px]">
-          <div className="flex justify-center gap-9 pb-5">
-            {TABS.map(t => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setTab(t.id)}
-                className={cn(
-                  'cursor-pointer border-b bg-transparent px-0 pb-1.5 font-sans text-sm transition-colors',
-                  tab === t.id
-                    ? 'border-text-primary font-medium text-text-primary'
-                    : 'border-transparent font-normal text-text-muted hover:text-text-tertiary'
-                )}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
 
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="pointer-events-none absolute left-0 right-0 top-0 z-[1] h-7 bg-gradient-to-b from-bg-primary to-transparent" />
         <div className="h-full overflow-y-auto px-6 pb-12 pt-3">
           <div className="mx-auto max-w-[540px]">
+
+            <div className="flex justify-center gap-9 pb-5">
+              {TABS.map(t => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setTab(t.id)}
+                  className={cn(
+                    'cursor-pointer border-b bg-transparent px-0 pb-1.5 font-sans text-sm transition-colors',
+                    tab === t.id
+                      ? 'border-text-primary font-medium text-text-primary'
+                      : 'border-transparent font-normal text-text-muted hover:text-text-tertiary'
+                  )}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {tab === 'test-cases' ? <TestCasesBlock agentContractJson={agent.agentContractJson} /> : null}
             {tab === 'tests' ? <TestsTab agent={agent} /> : null}
             {tab === 'proof' ? <ProofTab agent={agent} /> : null}
             {tab === 'rewards' ? <RewardsTab agent={agent} /> : null}

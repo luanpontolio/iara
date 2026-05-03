@@ -30,7 +30,8 @@ const FORO_REGISTRY_ADDRESS = (
 
 // Statically-indexed so TypeScript preserves the literal ABI entry type,
 // which lets viem infer typed `args` on the resulting logs.
-const AGENT_REGISTERED_EVENT = FORO_REGISTRY_ABI[3];
+// Index 6 = AgentRegistered event (getLatestTestJobId at [3], getTestJob at [4], getTestResult at [5]).
+const AGENT_REGISTERED_EVENT = FORO_REGISTRY_ABI[6];
 
 // Safe chunk size that stays within most RPC node log-query limits.
 const CHUNK_SIZE = 2000n;
@@ -45,6 +46,9 @@ const DEPLOY_BLOCK = 31011609n;
 export interface IndexedAgent {
   foroId: bigint;
   name: string;
+  erc8004Address: `0x${string}`;
+  erc8004AgentId: bigint;
+  transactionHash: `0x${string}` | undefined;
 }
 
 export interface UseAgentIndexerReturn {
@@ -154,7 +158,13 @@ export function useAgentIndexer(): UseAgentIndexerReturn {
             // Metadata fetch failed — keep the fallback name.
           }
 
-          newAgents.push({ foroId: args.foroId, name });
+          newAgents.push({
+            foroId: args.foroId,
+            name,
+            erc8004Address: args.erc8004Address,
+            erc8004AgentId: args.erc8004AgentId,
+            transactionHash: (log as { transactionHash?: `0x${string}` }).transactionHash,
+          });
         }
       }
 

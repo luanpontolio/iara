@@ -47,11 +47,17 @@ export interface ForoDetailAgent {
   rounds?: TestRound[];
   chatId?: string;
   block?: string;
+  vaultBalance?: string;
   keeperEarned?: string;
   stakeReturned?: string;
+  teeVerified?: boolean;
+  avgLatencyMs?: number;
+  latencyScore?: string;
+  qualityScore?: string;
+  agentContractJson?: string;
 }
 
-export type ForoTabId = 'tests' | 'proof' | 'rewards';
+export type ForoTabId = 'test-cases' | 'tests' | 'proof' | 'rewards';
 
 export interface TestCase {
   id: string;
