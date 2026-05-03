@@ -231,9 +231,11 @@ interface IForoRegistry {
     
     function getAgent(uint256 foroId) external view returns (Agent memory agent);
     
-    function getTestJob(uint256 foroId) external view returns (TestJob memory job);
+    function getLatestTestJobId(uint256 agentId) external view returns (uint256 jobId);
     
-    function getTestResult(uint256 foroId) external view returns (TestResult memory result);
+    function getTestJob(uint256 jobId) external view returns (TestJob memory job);
+    
+    function getTestResult(uint256 jobId) external view returns (TestResult memory result);
     
     function getLeaderboard(string calldata category) external view returns (uint256[] memory foroIds);
 }

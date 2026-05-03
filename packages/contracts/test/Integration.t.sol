@@ -65,7 +65,7 @@ contract IntegrationTest is Test {
 
     /**
      * @notice Test complete happy path flow
-     * @dev register → request → commit → reveal → submit → finalize → status PROBATION
+     * @dev register → request → commit → reveal → submit → finalize → status VERIFIED
      */
     function testHappyPath() public {
         // Step 1: Creator registers agent
@@ -113,9 +113,13 @@ contract IntegrationTest is Test {
         vm.prank(keeper);
         foroRegistry.finalizeResult(testForoId);
 
-        // Verify agent status updated to PROBATION (1 test)
+        // Keeper must withdraw their staked amount from _pendingWithdrawals
+        vm.prank(keeper);
+        foroRegistry.withdraw();
+
+        // Verify agent status updated to VERIFIED (score 75.00% >= 60.00 threshold)
         IForoRegistry.Agent memory updatedAgent = foroRegistry.getAgent(foroId);
-        assertEq(uint8(updatedAgent.status), uint8(IForoRegistry.AgentStatus.PROBATION));
+        assertEq(uint8(updatedAgent.status), uint8(IForoRegistry.AgentStatus.VERIFIED));
         assertEq(updatedAgent.testCount, 1);
 
         // Verify fee distribution (70% keeper, 20% creator, 10% protocol)
@@ -164,6 +168,10 @@ contract IntegrationTest is Test {
         vm.prank(keeper);
         foroRegistry.finalizeTestFailure(testForoId);
 
+        // Keeper must withdraw their staked amount from _pendingWithdrawals
+        vm.prank(keeper);
+        foroRegistry.withdraw();
+
         // Verify full refund to user
         assertEq(user.balance, userBalanceBefore + TEST_FEE, "User should receive full refund");
 
@@ -210,7 +218,7 @@ contract IntegrationTest is Test {
         // (8000 + 6000) / 2 = 7000 (scaled format)
         IForoRegistry.Agent memory agentWeighted = foroRegistry.getAgent(foroId);
         assertEq(agentWeighted.testCount, 2);
-        assertEq(uint8(agentWeighted.status), uint8(IForoRegistry.AgentStatus.PROBATION)); // 2 tests
+        assertEq(uint8(agentWeighted.status), uint8(IForoRegistry.AgentStatus.VERIFIED)); // score 70.00% >= 60.00 threshold
         
         // Cumulative score should be weighted average (equal weights in MVP)
         // Expected: (8000 * 1 + 6000 * 1) / (1 + 1) = 7000 (70.00%)
@@ -255,6 +263,12 @@ contract IntegrationTest is Test {
         vm.prank(address(this)); // Contract owner
         foroRegistry.resolveContestation(testForoId, true); // contestant wins
 
+        // Contestant and protocol treasury must withdraw from _pendingWithdrawals
+        vm.prank(contestant);
+        foroRegistry.withdraw();
+        vm.prank(protocolTreasury);
+        foroRegistry.withdraw();
+
         // Verify stake slashing (50% to contestant, 50% to protocol)
         uint256 expectedSlash = KEEPER_STAKE / 2;
         assertEq(contestant.balance, 10 ether + expectedSlash, "Contestant should receive 50% of slashed stake");
@@ -295,6 +309,10 @@ contract IntegrationTest is Test {
         uint256 userBalanceBefore = user.balance;
         foroRegistry.forfeitStake(testForoId);
 
+        // Protocol treasury must withdraw slashed stake from _pendingWithdrawals
+        vm.prank(protocolTreasury);
+        foroRegistry.withdraw();
+
         // Verify user refund
         assertEq(user.balance, userBalanceBefore + TEST_FEE, "User should receive full refund");
 
@@ -318,17 +336,17 @@ contract IntegrationTest is Test {
         IForoRegistry.Agent memory initialAgent = foroRegistry.getAgent(foroId);
         assertEq(uint8(initialAgent.status), uint8(IForoRegistry.AgentStatus.PENDING));
 
-        // Test 1: score 75 → PROBATION
+        // Test 1: score 75 → VERIFIED (score 75.00% >= 60.00 threshold)
         _executeTest(foroId, keeper, 75, 1000);
         IForoRegistry.Agent memory probationAgent = foroRegistry.getAgent(foroId);
-        assertEq(uint8(probationAgent.status), uint8(IForoRegistry.AgentStatus.PROBATION));
+        assertEq(uint8(probationAgent.status), uint8(IForoRegistry.AgentStatus.VERIFIED));
 
-        // Test 2: score 70 → still PROBATION
+        // Test 2: score 70 → still VERIFIED (avg ~72.50%, >= 60.00)
         _executeTest(foroId, keeper2, 70, 1500);
-        IForoRegistry.Agent memory stillProbation = foroRegistry.getAgent(foroId);
-        assertEq(uint8(stillProbation.status), uint8(IForoRegistry.AgentStatus.PROBATION));
+        IForoRegistry.Agent memory stillVerified = foroRegistry.getAgent(foroId);
+        assertEq(uint8(stillVerified.status), uint8(IForoRegistry.AgentStatus.VERIFIED));
 
-        // Test 3: score 80 → VERIFIED (3+ tests, avg >= 60)
+        // Test 3: score 80 → VERIFIED (avg ~75.00%, >= 60.00, < 80.00)
         _executeTest(foroId, keeper, 80, 800);
         IForoRegistry.Agent memory verifiedAgent = foroRegistry.getAgent(foroId);
         assertEq(uint8(verifiedAgent.status), uint8(IForoRegistry.AgentStatus.VERIFIED));

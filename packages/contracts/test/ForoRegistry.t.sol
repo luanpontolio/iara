@@ -262,11 +262,17 @@ contract ForoRegistryTest is Test {
         vm.deal(bob, 1 ether);
         vm.startPrank(bob);
         
-        uint256 foroId = registry.requestTest{value: testFee}(agentId);
+        uint256 jobId = registry.requestTest{value: testFee}(agentId);
+        
+        // Job IDs start at 1 from their own counter (independent of agent IDs)
+        assertEq(jobId, 1, "First jobId should be 1");
+        
+        // getLatestTestJobId should return this jobId
+        assertEq(registry.getLatestTestJobId(agentId), jobId, "getLatestTestJobId should return jobId");
         
         // Verify test job was created
-        IForoRegistry.TestJob memory job = registry.getTestJob(foroId);
-        assertEq(job.foroId, foroId, "foroId should match");
+        IForoRegistry.TestJob memory job = registry.getTestJob(jobId);
+        assertEq(job.foroId, jobId, "foroId should match jobId");
         assertEq(job.agentId, agentId, "agentId should match");
         assertEq(job.requester, bob, "requester should be bob");
         assertEq(job.testFee, testFee, "testFee should match");
@@ -294,7 +300,7 @@ contract ForoRegistryTest is Test {
         vm.startPrank(bob);
         
         // Should revert for non-existent agent
-        vm.expectRevert("Invalid foroId");
+        vm.expectRevert("Invalid agentId");
         registry.requestTest{value: 0.001 ether}(999);
         
         vm.stopPrank();
