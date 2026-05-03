@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { EB_Garamond } from 'next/font/google';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
+import { GeistPixelGrid } from 'geist/font/pixel';
 import { headers } from 'next/headers';
 import { cookieToInitialState } from 'wagmi';
 import { Providers } from '@/components/providers/Providers';
@@ -27,7 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${GeistSans.variable} ${GeistMono.variable} ${ebGaramond.variable}`}
+      className={`${GeistSans.variable} ${GeistMono.variable} ${ebGaramond.variable} ${GeistPixelGrid.variable}`}
       suppressHydrationWarning
     >
       <body style={{ margin: 0, height: '100%', overflow: 'hidden' }}>

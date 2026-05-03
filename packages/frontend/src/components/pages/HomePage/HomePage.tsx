@@ -25,7 +25,7 @@ export function HomePage() {
     <div className="flex h-screen flex-col overflow-hidden bg-bg-primary">
       <Header
         title="FORO"
-        onLogoClick={() => router.push('/')}
+        onLogoClick={() => router.push('/app')}
         actions={
           <>
             <Button variant="ghost" size="md">
@@ -64,7 +64,7 @@ export function HomePage() {
                       key={a.id}
                       agent={a}
                       variant="waiting"
-                      onClick={() => router.push(`/${a.id}`)}
+                      onClick={() => router.push(`/foro/${a.id}`)}
                     />
                   ))}
                 </div>
@@ -89,7 +89,7 @@ export function HomePage() {
             <div className="scrollbar-thin flex flex-1 flex-col gap-2 overflow-y-auto px-5 pb-6">
               {isLoading && <span className="px-1 text-xs text-text-tertiary">Loading…</span>}
               {live.map(a => (
-                <AgentCard key={a.id} agent={a} variant="live" onClick={() => router.push(`/${a.id}`)} />
+                <AgentCard key={a.id} agent={a} variant="live" onClick={() => router.push(`/foro/${a.id}`)} />
               ))}
             </div>
           </div>
@@ -122,7 +122,7 @@ export function HomePage() {
                         key={a.id}
                         agent={a}
                         variant="result"
-                        onClick={() => router.push(`/${a.id}`)}
+                        onClick={() => router.push(`/foro/${a.id}`)}
                       />
                     ))}
                   </div>
@@ -135,7 +135,7 @@ export function HomePage() {
                             key={a.id}
                             agent={a}
                             variant="result"
-                            onClick={() => router.push(`/${a.id}`)}
+                            onClick={() => router.push(`/foro/${a.id}`)}
                           />
                         ))}
                       </div>

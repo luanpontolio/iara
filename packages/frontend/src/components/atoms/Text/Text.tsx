@@ -9,15 +9,17 @@
 import React from 'react';
 import { cn } from '@/lib/utils/styles';
 
-type TextVariant = 
+type TextVariant =
   | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
   | 'body' | 'bodyLarge' | 'bodySmall'
   | 'caption' | 'label' | 'code'
-  | 'display' | 'title';
+  | 'display' | 'title'
+  | 'buttonXl';
 
-type TextColor = 
+type TextColor =
   | 'primary' | 'secondary' | 'tertiary' | 'quaternary' | 'muted' | 'disabled'
-  | 'success' | 'warning' | 'error' | 'info' | 'accent';
+  | 'success' | 'warning' | 'error' | 'info' | 'accent'
+  | 'inherit';
 
 const variantStyles: Record<TextVariant, string> = {
   display: 'text-6xl font-serif font-bold italic uppercase leading-none',
@@ -34,6 +36,7 @@ const variantStyles: Record<TextVariant, string> = {
   caption: 'text-xs font-sans leading-normal',
   label: 'text-xs font-sans font-medium uppercase tracking-widest',
   code: 'text-base font-mono leading-relaxed',
+  buttonXl: 'text-xl font-sans font-medium',
 };
 
 const colorStyles: Record<TextColor, string> = {
@@ -48,6 +51,7 @@ const colorStyles: Record<TextColor, string> = {
   error: 'text-error',
   info: 'text-info',
   accent: 'text-accent',
+  inherit: '',
 };
 
 const variantElements: Record<TextVariant, keyof JSX.IntrinsicElements> = {
@@ -65,6 +69,7 @@ const variantElements: Record<TextVariant, keyof JSX.IntrinsicElements> = {
   caption: 'span',
   label: 'label',
   code: 'code',
+  buttonXl: 'span',
 };
 
 export interface TextProps {
